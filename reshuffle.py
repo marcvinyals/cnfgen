@@ -146,6 +146,9 @@ def stableshuffle(inputfile,
             " ".join([str(subst[i]) for i in clause])
         clause_counter += 1
 
+    # Alternative algorithm that uses less memory:
+    #    1. record positions of lines.
+    #    2. for each (ordered) line in output, seek input, parse, substitute, write.
     for clause in clause_buffer :
         print(clause,file=outputfile)
 
@@ -293,7 +296,7 @@ def command_line_reshuffle(argv):
     if hasattr(args,'seed') and args.seed:
         random.seed(args.seed)
 
-    dimacsshuffle(args.input,args.output)
+    stableshuffle(args.input,args.output)
 
     if args.output!=sys.stdout:
         args.output.close()
