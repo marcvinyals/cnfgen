@@ -16,6 +16,7 @@ https://github.com/MassimoLauria/cnfgen.git
 
 import sys
 import random
+import subprocess
 from cnfformula import CNF
 from cnfformula.utils import dimacs2cnf
 
@@ -90,6 +91,75 @@ def reshuffle(cnf,
     assert out._check_coherence(force=True)
     return out
 
+def dimacsshuffle(inputfile=sys.stdin,outputfile=sys.stdout):
+    """ Reshuffle variables and polarity
+    """
+    n = -1  # negative signal that spec line has not been read
+    subst= None
+
+    line_counter = 0
+
+    header_buffer=[]
+
+    # Prepare to use command line shuffle
+    proc = subprocess.Popen("shuf", stdin=subprocess.PIPE, stdout=outputfile)
+
+    for l in inputfile.readlines():
+
+        line_counter+=1
+
+        # add the comment to the header (discard if it is in the middle)
+        if l[0]=='c':
+            if not subst: header_buffer.append(l)
+            continue
+
+        # parse spec line
+        if l[0]=='p':
+            if subst:
+                raise ValueError("Syntax error: "+
+                                 "line {} contains a second spec line.".format(line_counter))
+            _,_,nstr,_ = l.split()
+            n = int(nstr)
+            subst = substitution(n)
+            
+            # Print header
+            for h in header_buffer:
+                print(h,end='',file=outputfile)
+            
+            print("c Permuted with mapping",file=outputfile)
+            for i in xrange(1,n+1):
+                print("c   {} --> {}".format(i,subst[i]),file=outputfile)
+            print("c",file=outputfile)
+                        
+            print(l,end='',file=outputfile)
+            
+            continue
+
+        # parse literals
+        clause = [int(lit) for lit in l.split()]
+
+        # Checks at the end of clause
+        if clause[-1] != 0:
+            raise ValueError("Syntax error: last clause was incomplete")
+
+        print(" ".join([str(subst[i]) for i in clause]),file=proc.stdin)
+
+
+def substitution(n):
+
+    vars=range(1,n+1)
+    random.shuffle(vars)
+    vars=[0]+vars
+    flip=[0]+[1-2*random.randint(0,1) for i in xrange(n)]
+
+    subst=[None]*(2*n+1)
+    subst[0]=0
+    for i in xrange(1,n+1):
+        subst[i] = vars[i]*flip[i]
+        subst[-i]= -subst[i]
+
+    return subst
+
 
 def command_line_reshuffle(argv):
 
@@ -154,17 +224,7 @@ def command_line_reshuffle(argv):
     if hasattr(args,'seed') and args.seed:
         random.seed(args.seed)
 
-    input_cnf=dimacs2cnf(args.input)
-
-    output_cnf=reshuffle(input_cnf)
-
-    # Do we wnat comments or not
-    output_comments=args.verbose >= 2
-    output_header  =args.verbose >= 1
-
-    output_cnf.dimacs_dump(add_header=output_header,
-                           add_comments=output_comments,
-                           output=args.output)
+    dimacsshuffle(args.input,args.output)
 
     if args.output!=sys.stdout:
         args.output.close()
