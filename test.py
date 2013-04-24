@@ -25,18 +25,23 @@ class TestCNF(unittest.TestCase) :
         self.assertSetEqual(set1,set2)
 
     @staticmethod
-    def sorted_cnf(clauses) :
+    def cnf_from_variables_and_clauses(variables, clauses) :
         cnf = cnfformula.CNF()
-        variables = set(variable for polarity,variable in itertools.chain(*clauses));
-        for variable in sorted(variables) :
+        for variable in variables :
             cnf.add_variable(variable)
         for clause in clauses :
             cnf.add_clause(clause)
         return cnf
 
     @staticmethod
+    def sorted_cnf(clauses) :
+        return TestCNF.cnf_from_variables_and_clauses(
+            sorted(set(variable for polarity,variable in itertools.chain(*clauses))),
+            clauses)
+
+    @staticmethod
     def random_cnf(width, num_variables, num_clauses) :
-        return TestCNF.sorted_cnf([
+        return TestCNF.cnf_from_variables_and_clauses(xrange(1,num_variables+1), [
                 [(random.choice([True,False]),x+1)
                  for x in random.sample(xrange(num_variables),width)]
                 for C in xrange(num_clauses)])
@@ -174,13 +179,51 @@ class TestReshuffler(TestCNF) :
         random.shuffle(clause_permutation)
         polarity_flip = [random.choice([-1,1]) for x in xrange(10)]
         variables = list(cnf.variables())
-        massimos_fancy_input = [variables[variable_permutation[i]] for i in xrange(10)]
+        massimos_fancy_input = [variables[p] for p in variable_permutation]
         shuffle = reshuffle.reshuffle(cnf, massimos_fancy_input, clause_permutation,polarity_flip)
         i_variable_permutation = self.inverse_permutation(variable_permutation)
         i_clause_permutation = self.inverse_permutation(clause_permutation)
         i_polarity_flip = [polarity_flip[i] for i in variable_permutation]
         cnf2 = reshuffle.reshuffle(shuffle, variables, i_clause_permutation, i_polarity_flip)
         self.assertCnfEqual(cnf2,cnf)
+
+class TestDimacsReshuffler(TestCNF) :
+    def equivalence_test_helper(self, cnf, variable_permutation, clause_permutation, polarity_flip) :
+        variables = list(cnf.variables())
+        massimos_fancy_input = [variables[p] for p in variable_permutation]
+        random.seed(43)
+        shuffle = reshuffle.reshuffle(cnf, massimos_fancy_input, clause_permutation, polarity_flip)
+        reference_output = shuffle.dimacs()+"\n"
+        input = StringIO.StringIO(cnf.dimacs())
+        dimacs_shuffle = StringIO.StringIO()
+        random.seed(43)
+        reshuffle.stableshuffle(input, dimacs_shuffle, massimos_fancy_input, clause_permutation, polarity_flip)
+        self.assertMultiLineEqual(dimacs_shuffle.getvalue(), reference_output)
+
+    def test_identity_equivalence(self) :
+        cnf = self.random_cnf(2,3,2)
+        variable_permutation = range(3)
+        clause_permutation = range(2)
+        polarity_flip = [1]*3
+        self.equivalence_test_helper(cnf, variable_permutation, clause_permutation, polarity_flip)
+
+    def test_random_equivalence_small(self) :
+        cnf = self.random_cnf(4,10,10)
+        variable_permutation = range(10)
+        random.shuffle(variable_permutation)
+        clause_permutation = range(10)
+        random.shuffle(clause_permutation)
+        polarity_flip = [random.choice([-1,1]) for x in xrange(10)]
+        self.equivalence_test_helper(cnf, variable_permutation, clause_permutation, polarity_flip)
+
+    def test_random_equivalence(self) :
+        cnf = self.random_cnf(4,10,100)
+        variable_permutation = range(10)
+        random.shuffle(variable_permutation)
+        clause_permutation = range(100)
+        random.shuffle(clause_permutation)
+        polarity_flip = [random.choice([-1,1]) for x in xrange(10)]
+        self.equivalence_test_helper(cnf, variable_permutation, clause_permutation, polarity_flip)
 
 class TestSubstitution(TestCNF) :
     def test_or(self) :
