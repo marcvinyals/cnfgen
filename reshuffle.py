@@ -153,60 +153,6 @@ def stableshuffle(inputfile,
         print(clause,file=outputfile)
 
 
-def dimacsshuffle(inputfile=sys.stdin,outputfile=sys.stdout):
-    """ Reshuffle variables and polarity
-    """
-    n = -1  # negative signal that spec line has not been read
-    subst= None
-
-    line_counter = 0
-
-    header_buffer=[]
-
-    # Prepare to use command line shuffle
-    proc = subprocess.Popen("shuf", stdin=subprocess.PIPE, stdout=outputfile)
-
-    for l in inputfile.readlines():
-
-        line_counter+=1
-
-        # add the comment to the header (discard if it is in the middle)
-        if l[0]=='c':
-            if not subst: header_buffer.append(l)
-            continue
-
-        # parse spec line
-        if l[0]=='p':
-            if subst:
-                raise ValueError("Syntax error: "+
-                                 "line {} contains a second spec line.".format(line_counter))
-            _,_,nstr,_ = l.split()
-            n = int(nstr)
-            subst = substitution(n)
-            
-            # Print header
-            for h in header_buffer:
-                print(h,end='',file=outputfile)
-            
-            print("c Permuted with mapping",file=outputfile)
-            for i in xrange(1,n+1):
-                print("c   {} --> {}".format(i,subst[i]),file=outputfile)
-            print("c",file=outputfile)
-                        
-            print(l,end='',file=outputfile)
-            
-            continue
-
-        # parse literals
-        clause = [int(lit) for lit in l.split()]
-
-        # Checks at the end of clause
-        if clause[-1] != 0:
-            raise ValueError("Syntax error: last clause was incomplete")
-
-        print(" ".join([str(subst[i]) for i in clause]),file=proc.stdin)
-
-
 def substitution(n, variable_permutation = None,
                  polarity_flip = None) :
     if variable_permutation is None :
