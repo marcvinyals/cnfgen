@@ -4,7 +4,7 @@
 from __future__ import print_function
 
 from cnfformula import CNF
-from cnfformula import available_lifting,LiftFormula
+from cnfformula import available_transform,TransformFormula
 from itertools  import product
 import random
 
@@ -31,15 +31,15 @@ import argparse
 #################################################################
 
 
-class HelpLiftingAction(argparse.Action):
+class HelpTransformAction(argparse.Action):
     def __init__(self, **kwargs):
-        super(HelpLiftingAction, self).__init__(**kwargs)
+        super(HelpTransformAction, self).__init__(**kwargs)
 
     def __call__(self, parser, namespace, value, option_string=None):
         print("""
-        Liftings/Substitutions available
+        Formula transformations available
         """)
-        for k,entry in available_lifting().iteritems():
+        for k,entry in available_transform().iteritems():
             print("{}\t:  {}".format(k,entry[0]))
         print("\n")
         sys.exit(0)
@@ -69,33 +69,27 @@ def setup_command_line(parser):
     g.add_argument('--noheader', '-n',action='store_false',dest='header',
                    help="""Do not output the preamble, so that formula generation is faster (one
                            pass on the data).""")
-    parser.add_argument('--lift','-l',
-                        metavar="<lifting method>",
-                        choices=available_lifting().keys(),
+    parser.add_argument('--Transform','-T',
+                        metavar="<transformation method>",
+                        choices=available_transform().keys(),
                         default='none',
                         help="""
-                        Apply a lifting procedure to make the CNF harder.
-                        See `--help-lifting` for more informations
+                        Transform the CNF formula to make it harder.
+                        See `--help-transformation` for more informations
                         """)
-    parser.add_argument('--liftrank','-lr',
-                        metavar="<lifting rank>",
+    parser.add_argument('--Tarity','-Ta',
+                        metavar="<transformation arity>",
                         type=int,
                         default=None,
                         help="""
-                        Hardness parameter for the lifting procedure.
-                        See `--help-lifting` for more informations
+                        Hardness parameter for the transformation procedure.
+                        See `--help-transform` for more informations
                         """)
-    parser.add_argument('--noise',
-                        type=int,
-                        default=None,
-                        help="""
-                        Add noise clauses that propagate truthness from top to bottom
+    parser.add_argument('--help-transform',nargs=0,action=HelpTransformAction,help="""
+                        Formula can be made harder applying some
+                        so called "transformation procedures".
+                        This gives information about the implemented transformation.
                         """)
-    parser.add_argument('--help-lifting',nargs=0,action=HelpLiftingAction,help="""
-                         Formula can be made harder applying some
-                         so called "lifting procedures".
-                         This gives information about the implemented lifting.
-                         """)
 
     parser.add_argument('--input','-i',
                         type=argparse.FileType('r',0),
@@ -134,7 +128,7 @@ def pebbling_formula_clauses(kthfile):
     yield [-target]
 
 
-### Lift clauses
+### Transform clauses
 
 class StopClauses(StopIteration):
     """Exception raised when an iterator of clauses finish.
@@ -175,11 +169,11 @@ def lift(clauses,lift_method='none',lift_rank=None, noise=None):
     neglift=None
     
     dummycnf=CNF([[(True, "x")]])
-    dummycnf=LiftFormula(dummycnf,lift_method,lift_rank)
+    dummycnf=TransformFormula(dummycnf,lift_method,lift_rank)
 
-    varlift    =dummycnf.lift_variable_preamble("x")
-    poslift    =dummycnf.lift_a_literal(True,"x")
-    neglift    =dummycnf.lift_a_literal(False,"x")
+    varlift    =dummycnf.transform_variable_preamble("x")
+    poslift    =dummycnf.transform_a_literal(True,"x")
+    neglift    =dummycnf.transform_a_literal(False,"x")
 
     varlift    = [list(dummycnf._compress_clause(cls)) for cls in varlift ]
     poslift    = [list(dummycnf._compress_clause(cls)) for cls in poslift ]
@@ -268,7 +262,7 @@ def kth2dimacs(input, liftname, liftrank, output, header=True, comments=True, no
     except StopClauses as cnfinfo:
 
         if comments:
-            print("c Pebbling CNF with lifting \'{}\' of rank {}".format(liftname,liftrank),
+            print("c Pebbling CNF with transformation \'{}\' of arity {}".format(liftname,liftrank),
                   file=output)
 
         if header:
@@ -311,14 +305,14 @@ def command_line_utility(argv):
     # Parse the command line arguments
     parser=argparse.ArgumentParser(prog='kth2dimacs',epilog="""
     Each <formula type> has its own command line arguments and options.
-    For more information type 'cnfgen <formula type> [--help | -h ]'
+    For more information type 'kth2dimacs <formula type> [--help | -h ]'
     """)
     setup_command_line(parser)
 
     # Process the options
     args=parser.parse_args(argv)
 
-    kth2dimacs(args.input, args.lift, args.liftrank, args.output, header = args.header, noise = args.noise)
+    kth2dimacs(args.input, args.Transform, args.Tarity, args.output, header = args.header, noise = args.noise)
 
 ### Launcher
 if __name__ == '__main__':
