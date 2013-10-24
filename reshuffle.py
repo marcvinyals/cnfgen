@@ -16,9 +16,9 @@ https://github.com/MassimoLauria/cnfgen.git
 
 import sys
 import random
-import subprocess
 from cnfformula import CNF
 from cnfformula.utils import dimacs2cnf
+
 
 def reshuffle(cnf,
               variable_permutation=None,
@@ -48,20 +48,21 @@ def reshuffle(cnf,
     out.header="Reshuffling of:\n\n"+cnf.header
 
 
-    vars=list(cnf.variables())
-    N=len(vars)
+    variables=list(cnf.variables())
+    N=len(variables)
     M=len(cnf)
 
     # variable permutation
     if variable_permutation==None:
-        variable_permutation=vars
+        variable_permutation=variables
         random.shuffle(variable_permutation)
     else:
         assert len(variable_permutation)==N
 
     # polarity flip
     if polarity_flip==None:
-        polarity_flip = [random.choice([-1,1]) for x in xrange(N)]
+        polarity_flip=[1-2*random.randint(0,1)
+                              for i in xrange(N)]
     else:
         assert len(polarity_flip)==N
 
@@ -90,16 +91,6 @@ def reshuffle(cnf,
     out._clauses = [None]*M
     for (old,new) in enumerate(clause_permutation):
         out._clauses[new]=tuple( substitution[l] for l in cnf._clauses[old])
-
-    # load comments
-    assert len(out._comments)==0
-    clause_permutation.append((M,M)) # comments after last clause do not move
-    for (pos,text) in cnf._comments:
-        out._comments.append((clause_permutation[pos],text))
-    clause_permutation.pop()
-    def key(t): return t[0]
-    out._comments.sort(key=key)
-
 
     # return the formula
     assert out._check_coherence(force=True)
@@ -242,13 +233,10 @@ def command_line_reshuffle(argv):
                         """)
 
     g=parser.add_mutually_exclusive_group()
-    g.add_argument('--verbose', '-v',action='count',default=1,
-                   help="""Include comments inside the formula. It may
-                   not be supported by very old sat solvers.
-                   """)
-    g.add_argument('--quiet', '-q',action='store_const',const=0,dest='verbose',
-                   help="""Output just the formula with not header
-                   or comment.""")
+    g.add_argument('--verbose', '-v',action='store_true',default=True,
+                   help="""Output formula header and comments.""")
+    g.add_argument('--quiet', '-q',action='store_false',dest='verbose',
+                   help="""Output just the formula with no header.""")
 
 
     # Process the options

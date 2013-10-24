@@ -6,6 +6,91 @@ from .cnf import CNF,parity_constraint
 
 from itertools import product,combinations,permutations
 
+#
+# Transformation of a list of clauses
+#
+class StopClauses(StopIteration):
+    """Exception raised when an iterator of clauses finish.
+
+    Attributes:
+        variables -- number of variables in the clause stream
+        clauses   -- number of clauses streamed
+    """
+    def __init__(self, variables, clauses):
+        self.variables = variables
+        self.clauses = clauses
+
+
+def transform_compressed_clauses(clauses,method='none',rank=None):
+    """
+    Build a new CNF with by appling a transformation the old CNF. It
+    works on the compressed representation of a CNF: both input and
+    output of this transformation is a list of tuples of literals
+    represented as integer.
+
+    E.g. [(-1,2,3), (-2,1,5), (3,4,5)]
+
+    Arguments:
+    - `clauses`: a sequence of clause in DIMACS format
+    """
+
+    # Use a dummy lifting operation to get information about the
+    # lifting structure.
+    poslift=None
+    neglift=None
+    
+    dummycnf=CNF([[(True, "x")]])
+    dummycnf=TransformFormula(dummycnf,method,rank)
+
+    varlift    =dummycnf.transform_variable_preamble("x")
+    poslift    =dummycnf.transform_a_literal(True,"x")
+    neglift    =dummycnf.transform_a_literal(False,"x")
+
+    varlift    = [list(dummycnf._compress_clause(cls)) for cls in varlift ]
+    poslift    = [list(dummycnf._compress_clause(cls)) for cls in poslift ]
+    neglift    = [list(dummycnf._compress_clause(cls)) for cls in neglift ]
+    offset     = len(list(dummycnf.variables()))
+
+    # information about the input formula
+    input_variables = 0
+
+    output_clauses   = 0
+    output_variables = 0
+
+    def substitute(literal):
+        if literal>0:
+            var=literal
+            lift=poslift
+        else:
+            var=-literal
+            lift=neglift
+
+        substitute.max=max(var,substitute.max)
+        return [[ (l/abs(l))*offset*(var-1)+l for l in cls ] for cls in lift]
+
+    substitute.max=0
+           
+    for cls in clauses:
+
+        # a substituted clause is the OR of the substituted literals
+        domains=[ substitute(lit) for lit in cls ]
+        domains=tuple(domains)
+
+        for clause_tuple in product(*domains):
+            output_clauses +=1
+            yield [lit for clause in clause_tuple for lit in clause ]
+
+    # count the variables
+    input_variables  = substitute.max
+    output_variables = input_variables*offset
+
+    for i in xrange(input_variables):
+        for cls in varlift:
+            output_clauses += 1
+            yield [ (l/abs(l))*offset*i+l for l in cls ]
+
+    raise StopClauses(output_variables,output_clauses)
+
 
 ###
 ### Transformation of CNFs
@@ -60,23 +145,10 @@ class TransformedCNF(CNF):
                                for cls in substitutions[i] ]
 
         # build and add new clauses
-        clauses=self._orig_cnf._clauses
-
-        # dictionary of comments
-        commentlines=dict()
-        for (i,c) in self._orig_cnf._comments:
-            commentlines.setdefault(i,[]).append(c)
-
-
-        for i in xrange(len(clauses)):
-
-            # add comments if necessary
-            if i in commentlines:
-                for comment in commentlines[i]:
-                    self._comments.append((len(self._clauses),comment))
+        for orig_cls in self._orig_cnf._clauses:
 
             # a substituted clause is the OR of the substituted literals
-            domains=[ substitutions[lit] for lit in clauses[i] ]
+            domains=[ substitutions[lit] for lit in orig_cls ]
             domains=tuple(domains)
 
             block = [ tuple([lit for clause in clause_tuple
@@ -86,18 +158,10 @@ class TransformedCNF(CNF):
             self._add_compressed_clauses(block)
 
         # transformation may need additional clauses per variables
-        # added here so that the comment order is coherent
-        for i,block in enumerate(varadditional[1:],1):
+        for block in varadditional[1:]:
             if block:
-                self._comments.append((len(self._clauses),
-                                       "Clauses due to transformation {}".format(variablenames[i])))
                 self._add_compressed_clauses(block)
          
-        # add trailing comments
-        if len(clauses) in commentlines:
-            for comment in commentlines[len(clauses)]:
-                self._comments.append((len(self._clauses),comment))
-
         assert self._orig_cnf._check_coherence()
         assert self._check_coherence()
 
@@ -401,7 +465,7 @@ class One(TransformedCNF):
                      +self._header
 
     def transform_a_literal(self, polarity,varname):
-        """Substitute a literal with a (negated) XOR
+        """Substitute a literal with an \"Exactly One\"
 
         Arguments:
         - `polarity`: polarity of the literal

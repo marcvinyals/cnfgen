@@ -5,25 +5,35 @@ from __future__ import print_function
 
 from cnfformula import available_transform
 from cnfformula.transformation import transform_compressed_clauses,StopClauses
+from cnfformula.utils import dimacs2compressed_clauses
 
 
 __docstring__ =\
-"""Utilities to build dimacs encoding of pebbling formulas
+"""Utilities to apply to a dimacs CNF file, a transformation which
+increase formula hardness.
 
-Accept a KTH specific graph format:
+Accept a cnf in dimacs format in input
 
-ASSUMPTIONS: the graph is given with a line for each vertex, from
-sources to a *single sink*.
-
-CNF formulas interesting for proof complexity.
-
-Copyright (C) 2012, 2013  Massimo Lauria <lauria@kth.se>
+Copyright (C) 2013  Massimo Lauria <lauria@kth.se>
 https://github.com/MassimoLauria/cnfgen.git
 
 """
 
+__progname__ = "dimacstransform"
+
 import sys
-import argparse
+
+# Python 2.6 does not have argparse library
+try:
+    import argparse
+except ImportError:
+    print("Sorry: %s requires `argparse` library, which is missing.\n"%__progname__,file=sys.stderr)
+    print("Either use Python 2.7 or install it from one of the following URLs:",file=sys.stderr)
+    print(" * http://pypi.python.org/pypi/argparse",file=sys.stderr)
+    print(" * http://code.google.com/p/argparse",file=sys.stderr)
+    print("",file=sys.stderr)
+    exit(-1)
+
 
 #################################################################
 #          Command line tool follows
@@ -94,44 +104,15 @@ def setup_command_line(parser):
                         type=argparse.FileType('r',0),
                         metavar="<input>",
                         default='-',
-                        help="""Input file. The DAG is read from a file instead of being read from
-                        standard output. Setting '<input>' to '-' is
+                        help="""Input file. The input formula is read as a dimacs CNF file file instead of
+                        standard input. Setting '<input>' to '-' is
                         another way to read from standard
                         input.  (default: -)
                         """)
 
 
-def pebbling_formula_compressed_clauses(kthfile):
-    """
-    Read a graph from file, in the KTH format. And output the list of
-    compressed clauses representing the pebbling formula.
-
-    The vertices MUST be listed from to sources to the *A SINGLE
-    SINK*.  In a topologically sorted fashion.
-    
-    Arguments:
-    - `inputfile`:  file handle of the input
-    """
-
-    for l in kthfile.readlines():
-        
-        # ignore comments
-        if l[0]=='c':
-            continue
-
-        if ':' not in l:
-            continue # vertex number spec
-
-        target,sources=l.split(':')
-        target=int(target.strip())
-        yield [ -int(i) for i in sources.split() ]+[target]
-
-    yield [-target]
-
-
 ### Produce the dimacs output from the data
-def kth2dimacs(inputfile, method, rank, output, header=True, noise=False):
-    # Build the lifting mechanism
+def dimacstransform(inputfile, method, rank, output, header=True):
 
     # Generate the basic formula
     if header:
@@ -141,10 +122,10 @@ def kth2dimacs(inputfile, method, rank, output, header=True, noise=False):
 
     else:
         output_cache=output
-        
-    cls_iter=transform_compressed_clauses(
-                    pebbling_formula_compressed_clauses(inputfile),
-                    method,rank, noise)
+
+    o_header,_,o_clauses = dimacs2compressed_clauses(inputfile)
+
+    cls_iter=transform_compressed_clauses(o_clauses,method,rank)
 
     try:
 
@@ -154,9 +135,12 @@ def kth2dimacs(inputfile, method, rank, output, header=True, noise=False):
             
     except StopClauses as cnfinfo:
 
-
         if header:
             # clauses cached in memory
+            print("c Formula transformed with method '{}' or rank {}\nc".format(method,rank),
+                  file=output)
+            print("\n".join("c"+line for line in o_header.split('\n')),
+                  file=output)
             print("p cnf {} {}".format(cnfinfo.variables,cnfinfo.clauses),
                   file=output)
             output.write(output_cache.getvalue())
@@ -183,25 +167,14 @@ signal.signal(signal.SIGINT, signal_handler)
 ###
 def command_line_utility(argv):
 
-    # Python 2.6 does not have argparse library
-    try:
-        import argparse
-    except ImportError:
-        print("Sorry: %s requires `argparse` library, which is missing.\n"%argv[0],file=sys.stderr)
-        print("Either use Python 2.7 or install it from one of the following URLs:",file=sys.stderr)
-        print(" * http://pypi.python.org/pypi/argparse",file=sys.stderr)
-        print(" * http://code.google.com/p/argparse",file=sys.stderr)
-        print("",file=sys.stderr)
-        exit(-1)
-
     # Parse the command line arguments
-    parser=argparse.ArgumentParser(prog='kth2dimacs')
+    parser=argparse.ArgumentParser(prog='dimacstransform')
     setup_command_line(parser)
 
     # Process the options
     args=parser.parse_args(argv)
 
-    kth2dimacs(args.input, args.Transform, args.Tarity, args.output, args.header, args.noise)
+    dimacstransform(args.input, args.Transform, args.Tarity, args.output, args.header)
 
 ### Launcher
 if __name__ == '__main__':

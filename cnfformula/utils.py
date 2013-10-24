@@ -12,30 +12,39 @@ https://github.com/MassimoLauria/cnfgen.git
 
 """
 
-__all__ = ["dimacs2cnf"]
+__all__ = ["dimacs2cnf","dimacs2compressed_clauses"]
 
-def dimacs2cnf(file_handle):
-    """Load dimacs file into a CNF object
+
+def dimacs2compressed_clauses(file_handle):
     """
-    cnf=CNF(header="")
+    Parse a dimacs cnf file into a list of
+    compressed clauses.
 
+    return: (h,n,c) where
+
+    h is a string of text (the header)
+    n is the number of variables
+    c is the list of compressed clauses.
+    
+    """
     n = -1  # negative signal that spec line has not been read
     m = -1
 
+    my_header=""
+    my_clauses=[]
+
     line_counter=0
-    clause_counter=0
     literal_buffer=[]
 
     for l in file_handle.readlines():
 
         line_counter+=1
 
-        # add the comment to the header or in the middle
+        # Add all the comments to the header. If a comment is found
+        # inside the formula, add it to the header as well. Comments
+        # interleaving clauses are not allowed in dimacs format.
         if l[0]=='c':
-            if n<0:
-                cnf.header = cnf.header+(l[2:] or '\n')
-            else:
-                cnf.add_comment(l[2:].rstrip('\n') or '\n')
+            my_header += l[1:] or '\n'
             continue
 
         # parse spec line
@@ -46,17 +55,14 @@ def dimacs2cnf(file_handle):
             _,_,nstr,mstr = l.split()
             n = int(nstr)
             m = int(mstr)
-            for i in range(1,n+1):
-                cnf.add_variable(i)
             continue
-
+            
 
         # parse literals
         for lv in [int(lit) for lit in l.split()]:
             if lv==0:
-                cnf._add_compressed_clauses([tuple(literal_buffer)])
+                my_clauses.append(tuple(literal_buffer))
                 literal_buffer=[]
-                clause_counter +=1
             else:
                 literal_buffer.append(lv)
 
@@ -67,9 +73,29 @@ def dimacs2cnf(file_handle):
     if m=='-1':
         raise ValueError("Warning: empty input formula ")
 
-    if m!=clause_counter:
+    if m!=len(my_clauses):
         raise ValueError("Warning: input formula "+
-                         "contains {} instead of expected {}.".format(clause_counter,m))
+                         "contains {} instead of expected {}.".format(len(my_clauses),m))
+
+    # return the formula
+    return (my_header,n,my_clauses)
+
+
+
+
+def dimacs2cnf(file_handle):
+    """Load dimacs file into a CNF object
+    """
+
+    header,nvariables,clauses = dimacs2compressed_clauses(file_handle)
+
+    cnf=CNF(header=header)
+
+    for i in xrange(1,nvariables+1):
+        cnf.add_variable(i)
+
+    cnf._add_compressed_clauses(clauses)
+    
 
     # return the formula
     cnf._check_coherence(force=True)
