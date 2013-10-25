@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 from __future__ import print_function
+import re
 from .cnf import CNF
 
 __docstring__ =\
@@ -27,50 +28,45 @@ def dimacs2compressed_clauses(file_handle):
     c is the list of compressed clauses.
     
     """
-    n = -1  # negative signal that spec line has not been read
-    m = -1
+    n = None  # negative signal that spec line has not been read
+    m = None
 
     my_header=""
     my_clauses=[]
 
-    line_counter=0
-    literal_buffer=[]
-
-    for l in file_handle.readlines():
-
-        line_counter+=1
+    for line_counter,l in enumerate(file_handle.readlines()):
 
         # Add all the comments to the header. If a comment is found
         # inside the formula, add it to the header as well. Comments
         # interleaving clauses are not allowed in dimacs format.
-        if l[0]=='c':
-            my_header += l[1:] or '\n'
+        match = re.match(r'^c ?(.*)$',l)
+        if match:
+            my_header += match.group(1)+'\n'
             continue
-
-        # parse spec line
-        if l[0]=='p':
-            if n>=0:
+        
+        # Spec line
+        match = re.match(r'^p cnf (\d+) (\d+)$',l)
+        if match:
+            if not n is None:
                 raise ValueError("Syntax error: "+
-                                 "line {} contains a second spec line.".format(line_counter))
-            _,_,nstr,mstr = l.split()
-            n = int(nstr)
-            m = int(mstr)
+                                 "line {} contains a second spec line.".format(line_counter+1))
+            n = int(match.group(1))
+            m = int(match.group(2))
             continue
-            
+        
+        # Literals
+        if re.match(r'^(-?\d+ )*0$',l):
+            my_clauses.append(tuple([int(lit) for lit in l.split()][:-1]))
+            continue
 
-        # parse literals
-        for lv in [int(lit) for lit in l.split()]:
-            if lv==0:
-                my_clauses.append(tuple(literal_buffer))
-                literal_buffer=[]
-            else:
-                literal_buffer.append(lv)
+        # Uh?
+        if not re.match(r'^\s*$',l):
+            raise ValueError("Could not parse line {}.\n{}".format(line_counter+1,l))
+
+    my_header=my_header.rstrip()+'\n'
 
     # Checks at the end of parsing
-    if len(literal_buffer)>0:
-        raise ValueError("Syntax error: last clause was incomplete")
-
-    if m=='-1':
+    if m is None:
         raise ValueError("Warning: empty input formula ")
 
     if m!=len(my_clauses):
