@@ -21,7 +21,7 @@ class StopClauses(StopIteration):
         self.clauses = clauses
 
 
-def transform_compressed_clauses(clauses,method='none',rank=None):
+def transform_compressed_clauses(clauses,method='none',rank=None,noise=False):
     """
     Build a new CNF with by appling a transformation the old CNF. It
     works on the compressed representation of a CNF: both input and
@@ -88,6 +88,22 @@ def transform_compressed_clauses(clauses,method='none',rank=None):
         for cls in varlift:
             output_clauses += 1
             yield [ (l/abs(l))*offset*i+l for l in cls ]
+
+    # partition the input variables into groups of size `noise`
+    # randomly, sort them in decreasing order and then add clauses of
+    # the form
+    # 
+    # ¬ x_{i_1}^j v ¬ x_{i_2}^j v ... v ¬ x_{i_(noise-1)}^j v x_{i_noise}^j
+    # 
+    # for j in [1..rank]
+    if (noise) :
+        import random
+        vertices=range(input_variables)
+        random.shuffle(vertices)
+        for edge in zip(*[iter(vertices)]*noise) :
+            for l in xrange(offset) :
+                output_clauses += 1
+                yield [(1 if i else -1)*(offset*var+l+1) for i,var in enumerate(sorted(edge))]
 
     raise StopClauses(output_variables,output_clauses)
 

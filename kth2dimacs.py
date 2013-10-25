@@ -131,7 +131,7 @@ def pebbling_formula_compressed_clauses(kthfile):
 
 
 ### Produce the dimacs output from the data
-def kth2dimacs(inputfile, method, rank, output, header=True):
+def kth2dimacs(inputfile, method, rank, output, header=True, noise=False):
     # Build the lifting mechanism
 
     # Generate the basic formula
@@ -145,7 +145,7 @@ def kth2dimacs(inputfile, method, rank, output, header=True):
         
     cls_iter=transform_compressed_clauses(
                     pebbling_formula_compressed_clauses(inputfile),
-                    method,rank)
+                    method,rank,noise)
 
     try:
 
