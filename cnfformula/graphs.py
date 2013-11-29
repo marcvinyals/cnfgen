@@ -219,6 +219,32 @@ def writeGraph(G,output_file,format,graph_type='simple'):
     else:
         raise RuntimeError("Internal error, format {} not implemented".format(format))
 
+#################################################################
+#          Graph generators
+#################################################################
+
+def hexagonal_torus(rows,cols):
+    G=networkx.grid_2d_graph(rows,cols)
+    assert rows%2 == 0
+    assert cols%2 == 0
+    for (i,j) in G.nodes_iter():
+        if ((i+j) % 2 == 1):
+            G.remove_edge((i,j),((i+1)%rows,j))
+    for v in G.nodes_iter():
+        assert G.degree(v) == 3
+    return G
+
+def hexagonal_grid(rows,cols):
+    G=networkx.grid_2d_graph(rows,cols)
+    for (i,j) in G.nodes_iter():
+        if (i+1<rows and (i+j) % 2 == 1):
+            G.remove_edge((i,j),((i+1),j))
+    return G    
+    
+#################################################################
+#          Utilities
+#################################################################
+    
 #
 # test for dag / with caching
 #

@@ -8,6 +8,7 @@ from cnfformula import TransformFormula,available_transform
 
 from cnfformula.graphs import supported_formats as graph_formats
 from cnfformula.graphs import readDigraph,readGraph,writeGraph
+from cnfformula.graphs import hexagonal_grid, hexagonal_torus
 
 from cnfformula.families import (
     PigeonholePrinciple,
@@ -369,6 +370,9 @@ class _SimpleGraphHelper(_GraphHelper,_CMDLineHelper):
         gr.add_argument('--torus',type=int,nargs='+',action='store',metavar=('d1','d2'),
                         help="n-dimensional torus grid of dimensions d1 x d2 x ... x dn")
 
+        gr.add_argument('--hextorus',type=int,nargs=2,action='store',metavar=('m','n'),
+                        help="2-dimensional hexagonal torus grid (3-regular) of dimensions m x n")
+
         gr.add_argument('--complete',type=int,action='store',metavar="<N>",
                             help="complete graph on N vertices")
 
@@ -409,6 +413,13 @@ class _SimpleGraphHelper(_GraphHelper,_CMDLineHelper):
         elif hasattr(args,'torus') and args.torus:
             
             G=networkx.grid_graph(args.torus,periodic=True)
+
+        elif hasattr(args,'hextorus') and args.hextorus:
+
+            m,n = args.hextorus
+            if (m%2 == 1 or n%2 == 1):
+                raise ValueError("m and n must be even")
+            G=hexagonal_torus(m,n)
 
         elif hasattr(args,'complete') and args.complete>0:
 
