@@ -176,25 +176,27 @@ def PebblingFormula(digraph):
     return peb
 
 
-def OrderingPrinciple(size,total=False,smart=False):
+def OrderingPrinciple(size,total=False,smart=False,plant=False):
     """Generates the clauses for ordering principle
 
     Arguments:
     - `size`  : size of the domain
     - `total` : add totality axioms (i.e. "x < y" or "x > y")
     - `smart` : "x < y" and "x > y" are represented by a single variable (implies totality)
+    - `plant` : allow a single element to be minimum (could make the formula SAT)
     """
 
-    return GraphOrderingPrinciple(networkx.complete_graph(size),total,smart)
+    return GraphOrderingPrinciple(networkx.complete_graph(size),total,smart,plant)
 
 
-def GraphOrderingPrinciple(graph,total=False,smart=False):
+def GraphOrderingPrinciple(graph,total=False,smart=False,plant=False):
     """Generates the clauses for graph ordering principle
 
     Arguments:
     - `graph` : undirected graph
     - `total` : add totality axioms (i.e. "x < y" or "x > y")
     - `smart` : "x < y" and "x > y" are represented by a single variable (implies totality)
+    - `plant` : allow a single element to be minimum (could make the formula SAT)
     """
     gop=CNF()
 
@@ -221,7 +223,9 @@ def GraphOrderingPrinciple(graph,total=False,smart=False):
 
     # Clause is generated in such a way that if totality is enforces,
     # every pair occurs with a specific orientation.
-    for med in xrange(len(V)):
+    # Allow minimum on last vertex if 'plant' options.
+
+    for med in xrange(len(V)- (plant and 1) ):
         clause = []
         for lo in xrange(med):
             if graph.has_edge(V[med],V[lo]):
@@ -374,19 +378,15 @@ vertices are is specified in input.
         charges=charges+[0]*(len(V)-len(charges))  # pad with even charges
 
     # init formula
-    ordered_edges=graph.edges()
     tse=CNF()
-    for (v,w) in graph.edges():
-        tse.add_variable("E_{{{0},{1}}}".format(v,w))
+    for e in graph.edges():
+        tse.add_variable("E_{{{0},{1}}}".format(*sorted(e)))
 
     # add constraints
-    ordered_edges=graph.edges()
     for v,c in zip(V,charges):
         
-        edges=filter(lambda e: v in e, ordered_edges)
-
         # produce all clauses and save half of them
-        names = [ "E_{{{0},{1}}}".format(v,w) for (v,w) in edges ]
+        names = [ "E_{{{0},{1}}}".format(*sorted(e)) for e in graph.edges_iter(v) ]
         for cls in parity_constraint(names,c):
             tse.add_clause(list(cls))
 
