@@ -224,7 +224,7 @@ def writeGraph(G,output_file,format,graph_type='simple'):
 #################################################################
 
 def hexagonal_torus(rows,cols):
-    G=networkx.grid_2d_graph(rows,cols)
+    G=networkx.grid_2d_graph(rows,cols,periodic=True)
     assert rows%2 == 0
     assert cols%2 == 0
     for (i,j) in G.nodes_iter():
