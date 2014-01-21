@@ -3,3 +3,6 @@
 *.pyo
 .ropeproject/
 !./ropeproject/config.py
+build/
+dist/
+*.egg-info/

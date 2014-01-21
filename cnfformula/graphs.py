@@ -7,7 +7,7 @@ __docstring__ =\
 """Utilities to manage graph formats and graph files in order to build
 formulas that are graph based.
 
-Copyright (C) 2012, 2013  Massimo Lauria <lauria@kth.se>
+Copyright (C) 2012, 2013, 2014  Massimo Lauria <lauria@kth.se>
 https://github.com/MassimoLauria/cnfgen.git
 
 """
@@ -433,3 +433,4 @@ def vlcgraph(cnf):
         for (sign,var) in clause:
             G.add_edge(("+" if sign else "-")+str(var),"C_{}".format(i))
     return G
+
