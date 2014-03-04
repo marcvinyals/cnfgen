@@ -9,7 +9,6 @@ from cnfformula import TransformFormula,available_transform
 from cnfformula.graphs import supported_formats as graph_formats
 from cnfformula.graphs import readDigraph,readGraph,writeGraph
 
-from cnfformula.graphs import random_regular_bipartite
 
 from cnfformula.families import (
     PigeonholePrinciple,
@@ -31,7 +30,7 @@ order to  be printed  in dimacs  or LaTeX  formats. Such  formulas are
 ready to be  fed to sat solvers.  In particular  the module implements
 both a library of CNF generators and a command line utility.
 
-Copyright (C) 2012, 2013  Massimo Lauria <lauria@kth.se>
+Copyright (C) 2012, 2013, 2014  Massimo Lauria <lauria@kth.se>
 https://github.com/MassimoLauria/cnfgen.git
 
 
@@ -173,7 +172,7 @@ class _GeneralCommandLine(_CMDLineHelper):
                             default='none',
                             help="""
                             Transform the CNF formula to make it harder.
-                            See `--help-transformation` for more informations
+                            See `--help-transform` for more information
                             """)
         parser.add_argument('--Tarity','-Ta',
                             metavar="<transformation arity>",
@@ -512,14 +511,14 @@ class _BipartiteGraphHelper(_GraphHelper,_CMDLineHelper):
         # gr.add_argument('--bm',type=int,nargs=2,action='store',metavar=('l','r','m'),
         #         help="random bipartite graph, with m random edges")
 
-        # gr.add_argument('--bleftd',type=int,nargs=2,action='store',metavar=('l','d'),
+        # gr.add_argument('--bleftd',type=int,nargs=2,action='store',metavar=('l','r','d'),
         #         help="random bipartite d-left-regular graph, with d random edges per left vertex)")
 
-        gr.add_argument('--bregular',type=int,nargs=3,action='store',metavar=('l','r','d'),
-                help="random (l,r)-bipartite regular graph, with d edges per left vertex.")
+        # gr.add_argument('--bregular',type=int,nargs=3,action='store',metavar=('l','r','d'),
+        #         help="random (l,r)-bipartite regular graph, with d edges per left vertex.")
 
-        # gr.add_argument('--complete',type=int,action='store',metavar="<N>",
-        #                     help="complete graph on N vertices")
+        # gr.add_argument('--bcomplete',type=int,nargs=2,action='store',metavar=('l','r'),
+        #         help="complete bipartite graph")
 
         # gr=parser.add_argument_group("Graph modifications")
         # gr.add_argument('--plantclique',type=int,action='store',metavar="<k>",
@@ -528,62 +527,45 @@ class _BipartiteGraphHelper(_GraphHelper,_CMDLineHelper):
 
     @staticmethod
     def obtain_graph(args):
-        """Build a Graph according to command line arguments
+        """Build a Bipartite graph according to command line arguments
 
         Arguments:
         - `args`: command line options
         """
-        if hasattr(args,'gnd') and args.gnd:
+        if hasattr(args,'bp') and args.bp:
 
-            n,d = args.gnd
-            if (n*d)%2 == 1:
-                raise ValueError("n * d must be even")
-            G=networkx.random_regular_graph(d,n)
-            return G
+            raise ValueError("Not implenented")
 
-        elif hasattr(args,'gnp') and args.gnp:
+        elif hasattr(args,'bm') and args.bm:
 
-            n,p = args.gnp
-            G=networkx.gnp_random_graph(n,p)
+            raise ValueError("Not implenented")
 
-        elif hasattr(args,'gnm') and args.gnm:
+        elif hasattr(args,'bleftd') and args.bleftd:
 
-            n,m = args.gnm
-            G=networkx.gnm_random_graph(n,m)
+            raise ValueError("Not implenented")
 
         elif hasattr(args,'bregular') and args.bregular:
 
-            l,r,d = args.bregular;
-            G=random_regular_bipartite(l,r,d)
+            raise ValueError("Not implenented")
 
-        elif hasattr(args,'torus') and args.torus:
+        elif hasattr(args,'bcomplete') and args.torus:
             
-            G=networkx.grid_graph(args.torus,periodic=True)
+            raise ValueError("Not implenented")
 
-        elif hasattr(args,'complete') and args.complete>0:
-
-            G=networkx.complete_graph(args.complete)
-
-        elif args.graphformat:
-
-            G=readGraph(args.input,args.graphformat)
         else:
             raise RuntimeError("Invalid graph specification on command line")
 
         # Graph modifications
         if hasattr(args,'plantclique') and args.plantclique>1:
 
-            clique=random.sample(G.nodes(),args.plantclique)
-
-            for v,w in combinations(clique,2):
-                G.add_edge(v,w)
+            raise ValueError("Not implenented")
 
         # Output the graph is requested
         if hasattr(args,'savegraph') and args.savegraph:
             writeGraph(G,
                        args.savegraph,
                        args.graphformat,
-                       graph_type='simple')
+                       graph_type='bipartite')
 
         return G
 
@@ -676,8 +658,13 @@ class _OP(_FormulaFamilyHelper,_CMDLineHelper):
         - `parser`: parser to load with options.
         """
         parser.add_argument('N',metavar='<N>',type=int,help="domain size")
-        parser.add_argument('--total','-t',default=False,action='store_true',help="assume a total order")
-        parser.add_argument('--smart','-s',default=False,action='store_true',help="encode 'x<y' and 'x>y' in a single variable (implies totality)")
+        g=parser.add_mutually_exclusive_group()
+        g.add_argument('--total','-t',default=False,action='store_true',help="assume a total order")
+        g.add_argument('--smart','-s',default=False,action='store_true',help="encode 'x<y' and 'x>y' in a single variable (implies totality)")
+        g.add_argument('--knuth2', action='store_const', dest='knuth',const=2,
+                       help="transitivity axioms: \"(i<j)(j<k)->(i,k)\" only for j>i,k")
+        g.add_argument('--knuth3', action='store_const', dest='knuth',const=3,
+                       help="transitivity axioms: \"(i<j)(j<k)->(i,k)\" only for k>i,j")
         parser.add_argument('--plant','-p',default=False,action='store_true',help="allow a minimum element")
 
     @staticmethod
@@ -687,7 +674,7 @@ class _OP(_FormulaFamilyHelper,_CMDLineHelper):
         Arguments:
         - `args`: command line options
         """
-        return OrderingPrinciple(args.N,args.total,args.smart,args.plant)
+        return OrderingPrinciple(args.N,args.total,args.smart,args.plant,args.knuth)
 
 
 class _GOP(_FormulaFamilyHelper,_CMDLineHelper):
@@ -703,8 +690,13 @@ class _GOP(_FormulaFamilyHelper,_CMDLineHelper):
         Arguments:
         - `parser`: parser to load with options.
         """
-        parser.add_argument('--total','-t',default=False,action='store_true',help="assume a total order")
-        parser.add_argument('--smart','-s',default=False,action='store_true',help="encode 'x<y' and 'x>y' in a single variable (implies totality)")
+        g=parser.add_mutually_exclusive_group()
+        g.add_argument('--total','-t',default=False,action='store_true',help="assume a total order")
+        g.add_argument('--smart','-s',default=False,action='store_true',help="encode 'x<y' and 'x>y' in a single variable (implies totality)")
+        g.add_argument('--knuth2', action='store_const', dest='knuth',const=2,
+                       help="transitivity axioms: \"(i<j)(j<k)->(i,k)\" only for j>i,k")
+        g.add_argument('--knuth3', action='store_const', dest='knuth',const=3,
+                       help="transitivity axioms: \"(i<j)(j<k)->(i,k)\" only for k>i,j")
         parser.add_argument('--plant','-p',default=False,action='store_true',help="allow a minimum element")
         _SimpleGraphHelper.setup_command_line(parser)
 
@@ -717,7 +709,7 @@ class _GOP(_FormulaFamilyHelper,_CMDLineHelper):
         - `args`: command line options
         """
         G=_SimpleGraphHelper.obtain_graph(args)
-        return GraphOrderingPrinciple(G,args.total,args.smart,args.plant)
+        return GraphOrderingPrinciple(G,args.total,args.smart,args.plant,args.knuth)
 
 
 class _KClique(_FormulaFamilyHelper,_CMDLineHelper):
