@@ -46,10 +46,11 @@ except ImportError:
 
 # remove dot format if graphviz is not installed
 # we put it by default for documentation purpose
+# notice that it is networkx itself that requires graphviz.
 try:
     import pygraphviz
 except ImportError:
-    print("WARNING: Missing 'dot' library: no support for graph based formulas.",
+    print("WARNING: Missing 'dot' library: no support for dot graph format.",
           file=sys.stderr)
     for k in _graphformats.values():
         try:
@@ -83,7 +84,8 @@ def readDigraph(file,format,force_dag=False,multi=False):
 
     if format=='dot':
 
-        D=grtype(pygraphviz.AGraph(file.read()).edges())
+        D=grtype(networkx.read_dot(file))
+        #D=grtype(pygraphviz.AGraph(file.read()).edges())
 
     elif format=='gml':
 
@@ -126,7 +128,7 @@ def readGraph(file,format,multi=False):
 
     if format=='dot':
 
-        G=grtype(pygraphviz.AGraph(file.read()).edges())
+        D=grtype(networkx.read_dot(file))
 
     elif format=='gml':
 
