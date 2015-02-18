@@ -503,3 +503,31 @@ def SubgraphFormula(graph,templates):
 
     return F
 
+def nCr(n,r):
+    import math
+    f = math.factorial
+    return f(n) / f(r) / f(n-r)
+
+def RandomGwSAT(g, w, n, m, seed=None):
+    """Build a random w-CNF with m clauses such that there is an assignment that satisfies exactly g literals in each clause"""
+
+    maxm = nCr(n,w)
+    if (m>maxm):
+        raise ValueError("Too many clauses")
+    
+    import random
+    random.seed(seed)
+    F = CNF()
+
+    for variable in xrange(1,n+1):
+        F.add_variable(variable)
+
+    assignment=[random.choice([True,False]) for x in xrange(n)]
+
+    clauses = set()
+    while len(clauses)<m :
+        clauses.add(tuple((assignment[x],x+1) for x in random.sample(xrange(n),w)))
+    for clause in clauses:
+        F.add_clause(list(clause))
+
+    return F

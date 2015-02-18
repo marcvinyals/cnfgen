@@ -18,7 +18,8 @@ from cnfformula.families import (
     RamseyNumber,
     TseitinFormula,
     SubgraphFormula,
-    ColoringFormula)
+    ColoringFormula,
+    RandomGwSAT)
 
 
 
@@ -944,6 +945,24 @@ class _AND(_FormulaFamilyHelper,_CMDLineHelper):
                    header="""Singleton clauses: {} positive and {} negative""".format(args.P,args.N))
 
 
+class _GwSAT(_FormulaFamilyHelper,_CMDLineHelper):
+    """Command line helper for (g,w)-SAT formulas
+    """
+    name='gwsat'
+    description='(g,w)-SAT'
+
+    @staticmethod
+    def setup_command_line(parser):
+        parser.add_argument('g',type=int,help="true literals")
+        parser.add_argument('w',type=int,help="clause width")
+        parser.add_argument('n',type=int,help="number of variables")
+        parser.add_argument('m',type=int,help="number of clauses")
+
+    @staticmethod
+    def build_cnf(args):
+        return RandomGwSAT(args.g,args.w,args.n,args.m)
+
+
 ###
 ### Register signals
 ###
@@ -961,7 +980,7 @@ def command_line_utility(argv=sys.argv):
 
     # Commands and subcommand lines
     cmdline = _GeneralCommandLine
-    subcommands=[_PHP,_TSE,_OP,_GOP,_PEB,_RAM,_RAMLB,_KClique,_KColor,_OR,_AND]
+    subcommands=[_PHP,_TSE,_OP,_GOP,_PEB,_RAM,_RAMLB,_KClique,_KColor,_OR,_AND,_GwSAT]
 
     # Parse the command line arguments
     parser=argparse.ArgumentParser(prog='cnfgen',epilog="""
