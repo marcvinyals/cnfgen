@@ -169,20 +169,20 @@ def command_line_utility(argv=sys.argv):
     """
 
     # Collect formula families
-    import pkgutil
-    import cnfformula.families
+    pkgutil = __import__("pkgutil")
+    families = __import__("cnfformula.families")
 
     subcommands = []
     
-    for loader, module_name, _ in  pkgutil.walk_packages(cnfformula.families.__path__):
-        module_name = cnfformula.families.__name__+"."+module_name
+    for loader, module_name, _ in  pkgutil.walk_packages(families.__path__):
+        module_name = families.__name__+"."+module_name
         module = loader.find_module(module_name).load_module(module_name)
         for objname in dir(module):
             obj = getattr(module, objname)
             if is_formula_cmdhelper(obj):
                 subcommands.append(obj)
     subcommands.sort(key=lambda x: x.name)
-    del pkgutil,cnfformula.families
+    del pkgutil,families
 
     # Main command line setup
     parser=argparse.ArgumentParser(prog=os.path.basename(argv[0]),
