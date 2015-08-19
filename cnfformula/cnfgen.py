@@ -149,6 +149,24 @@ def signal_handler(insignal, frame):
 
 signal.signal(signal.SIGINT,signal_handler)
 
+def get_formula_types():
+    # Collect formula families
+    import pkgutil
+    import cnfformula.families as families
+
+    subcommands = []
+
+    for loader, module_name, _ in  pkgutil.walk_packages(families.__path__):
+        module_name = families.__name__+"."+module_name
+        module = loader.find_module(module_name).load_module(module_name)
+        for objname in dir(module):
+            obj = getattr(module, objname)
+            if is_formula_cmdhelper(obj):
+                subcommands.append(obj)
+    subcommands.sort(key=lambda x: x.name)
+    return subcommands
+
+
 ###
 ### Main program
 ###
@@ -168,22 +186,8 @@ def command_line_utility(argv=sys.argv):
         The list of token with the command line arguments/options.
     """
 
-    # Collect formula families
-    pkgutil = __import__("pkgutil")
-    families = __import__("cnfformula.families")
-
-    subcommands = []
+    subcommands = get_formula_types()
     
-    for loader, module_name, _ in  pkgutil.walk_packages(families.__path__):
-        module_name = families.__name__+"."+module_name
-        module = loader.find_module(module_name).load_module(module_name)
-        for objname in dir(module):
-            obj = getattr(module, objname)
-            if is_formula_cmdhelper(obj):
-                subcommands.append(obj)
-    subcommands.sort(key=lambda x: x.name)
-    del pkgutil,families
-
     # Main command line setup
     parser=argparse.ArgumentParser(prog=os.path.basename(argv[0]),
                                    epilog="""
