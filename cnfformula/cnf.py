@@ -1001,3 +1001,12 @@ def loose_minority_constraint(variables):
     """
     threshold = len(variables)/2
     return less_or_equal_constraint(variables, threshold)
+
+def exactly_half_ceil(variables):
+    threshold = (len(variables)+1)/2
+    return equal_to_constraint(variables,threshold)
+
+def exactly_half_floor(variables):
+    threshold = len(variables)/2
+    return equal_to_constraint(variables,threshold)
+    
