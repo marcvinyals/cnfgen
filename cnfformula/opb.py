@@ -27,7 +27,7 @@ class OPB(object):
     def add_constraint(self, constraint):
         self._constraints.append(constraint)
         
-    def add_clause(self, clause):
+    def add_clause(self, clause, strict=False):
         self.add_constraint([(1,)+lit for lit in clause] + [1])
 
     def add_geq_constraint(self, variables, lower_bound):
