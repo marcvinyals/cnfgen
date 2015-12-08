@@ -9,14 +9,19 @@ class OPB(object):
     def to_opb(self):
         from cStringIO import StringIO
         output = StringIO()
+        output.write("* #variable= {} #constraint= {}\n".format(
+            len(self._index2name),len(self._constraints)))
         for c in self._constraints:
+            freeterm = c[-1]
             for term in c[:-1]:
                 coefficient = term[0]
-                literal = "x" + str(self._name2index[term[2]])
+                literal = "x" + str(self._name2index[term[2]]+1)
                 if not term[1] :
-                    literal = "~" + literal
+                    coefficient *= -1
+                    freeterm += coefficient
+                    # literal = "~" + literal
                 output.write("{} {} ".format(coefficient,literal))
-            output.write(">= {} ;\n".format(c[-1]))
+            output.write(">= {} ;\n".format(freeterm))
 
         return output.getvalue()
         
@@ -34,7 +39,7 @@ class OPB(object):
         self.add_constraint([(1,True,var) for var in variables] + [lower_bound])
         
     def add_leq_constraint(self, variables, upper_bound):
-        self.add_constraint([(-1,True,var) for var in variables] + [upper_bound])
+        self.add_constraint([(-1,True,var) for var in variables] + [-upper_bound])
 
     def add_eq_constraint(self, variables, value):
         self.add_geq_constraint(variables, value)
