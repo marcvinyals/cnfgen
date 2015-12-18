@@ -5,10 +5,10 @@
 from __future__ import print_function
 
 import os
-
-
 import sys
 import random
+from six.moves import xrange
+
 from .. import CNF
 from .  import dimacs2cnf
 
@@ -75,7 +75,7 @@ def cnfshuffle(cnf,
     # permutation of clauses
     #
     if clause_permutation==None:
-        clause_permutation=range(M)
+        clause_permutation=list(range(M))
         random.shuffle(clause_permutation)
 
     # load clauses

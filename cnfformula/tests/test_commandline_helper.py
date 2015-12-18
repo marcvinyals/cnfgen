@@ -1,7 +1,10 @@
+from __future__ import unicode_literals
+
 import unittest
 from contextlib import contextmanager
-from cStringIO import StringIO
+from io import StringIO
 import sys
+import six
 
 import cnfformula.cnfgen as cnfgen
 
@@ -29,7 +32,7 @@ def stderr_redirector(stream):
 class TestCommandline(unittest.TestCase):
     def checkFormula(self, cnf, parameters):
         parameters = ["cnfgen"] + parameters
-        parameters = [str(x) for x in parameters]
+        parameters = [six.text_type(x) for x in parameters]
         f = StringIO()
         with stdout_redirector(f):
             cnfgen.command_line_utility(parameters)
@@ -37,7 +40,7 @@ class TestCommandline(unittest.TestCase):
 
     def checkCrash(self, parameters):
         parameters = ["cnfgen"] + parameters
-        parameters = [str(x) for x in parameters]
+        parameters = [six.text_type(x) for x in parameters]
         f = StringIO()
         with stderr_redirector(f), self.assertRaises(SystemExit) as cm:
             cnfgen.command_line_utility(parameters)

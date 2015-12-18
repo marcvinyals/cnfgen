@@ -11,6 +11,7 @@ CNF formulas interesting for proof complexity.
 """
 
 from __future__ import print_function
+from __future__ import unicode_literals
 
 import os
 
@@ -134,7 +135,7 @@ def adjlist2pebbling(inputfile, method, rank, output, header=True):
     # Generate the basic formula
     if header:
         
-        from cStringIO import StringIO
+        from io import StringIO
         output_cache=StringIO()
 
     else:
@@ -147,7 +148,7 @@ def adjlist2pebbling(inputfile, method, rank, output, header=True):
     try:
 
         while True:
-            cls = cls_iter.next()
+            cls = next(cls_iter)
             print(" ".join([str(l) for l in cls])+" 0",file=output_cache)
             
     except StopClauses as cnfinfo:

@@ -55,7 +55,7 @@ class TestOrderingPrincipleCommandline(TestCommandline):
                             if smart : parameters.append("--smart")
                             if plant : parameters.append("--plant")
                             if knuth : parameters.append("--knuth{}".format(knuth))
-                            switches = len(filter(None,(total,smart,knuth)))
+                            switches = len(list(filter(None,(total,smart,knuth))))
                             if (switches>1) :
                                 self.checkCrash(parameters)
                             else :
@@ -74,7 +74,7 @@ class TestGraphOrderingPrincipleCommandline(TestCommandline):
                             if smart : parameters.append("--smart")
                             if plant : parameters.append("--plant")
                             if knuth : parameters.append("--knuth{}".format(knuth))
-                            switches = len(filter(None,(total,smart,knuth)))
+                            switches = len(list(filter(None,(total,smart,knuth))))
                             if (switches>1) :
                                 self.checkCrash(parameters)
                             else :

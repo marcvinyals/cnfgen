@@ -1,5 +1,8 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+
 import random
+from six.moves import xrange
 
 def stableshuffle(inputfile,
                   outputfile,
@@ -33,7 +36,7 @@ def stableshuffle(inputfile,
 
             # Clause permutation
             if clause_permutation==None:
-                clause_permutation=range(m)
+                clause_permutation=list(range(m))
                 random.shuffle(clause_permutation)
             
             clause_buffer=[None]*m
@@ -67,7 +70,7 @@ def stableshuffle(inputfile,
 def substitution(n, variable_permutation = None,
                  polarity_flip = None) :
     if variable_permutation is None :
-        variable_permutation = range(1,n+1)
+        variable_permutation = list(range(1,n+1))
         random.shuffle(variable_permutation)
     else:
         assert len(variable_permutation)==n

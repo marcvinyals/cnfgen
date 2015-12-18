@@ -203,7 +203,7 @@ class DirectedAcyclicGraphHelper(GraphHelper):
 
             try:
                 D=readGraph(args.input,"dag",args.graphformat)
-            except ValueError,e:
+            except ValueError as e:
                 print("ERROR ON '{}'. {}".format(args.input.name,e),file=sys.stderr)
                 exit(-1)
         else:
@@ -350,7 +350,7 @@ class SimpleGraphHelper(GraphHelper):
                 G=readGraph(getattr(args,'input'+suffix),
                             "simple",
                             getattr(args,'graphformat'+suffix))
-            except ValueError,e:
+            except ValueError as e:
                 print("ERROR ON '{}'. {}".format(
                     getattr(args,'input'+suffix).name,e),
                       file=sys.stderr)
@@ -359,9 +359,10 @@ class SimpleGraphHelper(GraphHelper):
             raise RuntimeError("Invalid graph specification on command line")
 
         # Graph modifications
-        if getattr(args,'plantclique'+suffix)>1:
+        plantcliquesize = getattr(args,'plantclique'+suffix)
+        if plantcliquesize is not None and plantcliquesize > 1:
 
-            clique=random.sample(G.nodes(),getattr(args,'plantclique'+suffix))
+            clique=random.sample(G.nodes(), plantcliquesize)
 
             for v,w in combinations(clique,2):
                 G.add_edge(v,w)
@@ -490,7 +491,7 @@ class BipartiteGraphHelper(GraphHelper):
 
             try:
                 G=readGraph(args.input, "bipartite", args.graphformat)
-            except ValueError,e:
+            except ValueError as e:
                 print("ERROR ON '{}'. {}".format(args.input.name,e),file=sys.stderr)
                 exit(-1)
                             

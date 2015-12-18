@@ -5,6 +5,7 @@ formulas that are graph based.
 """
 
 from __future__ import print_function
+from __future__ import unicode_literals
 
 
 __all__ = ["supported_formats",
@@ -36,9 +37,10 @@ def supported_formats():
 #################################################################
 
 import sys
-import StringIO
 import io
 import os
+import six
+from six.moves import xrange
 
 try:
     import networkx
@@ -78,7 +80,7 @@ def _process_graph_io_arguments(iofile,
     # Check the file
     if not isinstance(iofile,io.TextIOBase) and \
        not isinstance(iofile,file) and \
-       not isinstance(iofile,StringIO.StringIO):
+       not isinstance(iofile,io.StringIO):
         raise ValueError("The input source \"{}\" does not correspond to a file".format(iofile))
     
     # Check the graph type specification
@@ -180,7 +182,7 @@ def readGraph(input_file,graph_type,file_format='autodetect',multi_edges=False):
     """
 
     # file name instead of file object
-    if isinstance(input_file,(str,unicode)):
+    if isinstance(input_file,six.string_types):
         with open(input_file,'r') as file_handle:
             return readGraph(file_handle,graph_type,file_format,multi_edges)
 
@@ -198,7 +200,7 @@ def readGraph(input_file,graph_type,file_format='autodetect',multi_edges=False):
 
         try:
             G=grtype(networkx.read_gml(input_file))
-        except networkx.NetworkXError,errmsg:
+        except networkx.NetworkXError as errmsg:
             raise ValueError("[Parse error in GML input] {} ".format(errmsg))
 
     elif file_format=='adjlist':
@@ -268,7 +270,7 @@ def writeGraph(G,output_file,graph_type,file_format='autodetect'):
     """
 
     # file name instead of file object
-    if isinstance(output_file,(str,unicode)):
+    if isinstance(output_file,six.string_types):
         with open(output_file,'w') as file_handle:
             return writeGraph(G,file_handle,graph_type,file_format)
 
@@ -638,7 +640,7 @@ def _write_graph_adjlist_format(G,output_file):
     # adj list in the same order
     indices = dict( enumeration )
 
-    from cStringIO import StringIO
+    from io import StringIO
     output = StringIO()
 
     for v,i in enumeration:

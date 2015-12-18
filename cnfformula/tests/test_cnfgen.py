@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import unicode_literals
+
 import cnfformula.cnfgen as cnfgen
 
 from .test_commandline_helper import TestCommandline, stderr_redirector

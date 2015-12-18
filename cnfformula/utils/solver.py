@@ -54,8 +54,8 @@ def _satsolve_filein_fileout(F, cmd='minisat'):
 
     # Minisat does not operate on stdin/stdout so we need temporary
     # files
-    cnf = tempfile.NamedTemporaryFile(delete=False)
-    sat = tempfile.NamedTemporaryFile(delete=False)
+    cnf = tempfile.NamedTemporaryFile(mode='w', delete=False)
+    sat = tempfile.NamedTemporaryFile(mode='w', delete=False)
     cnf.write(F.dimacs())
     cnf.close()
     sat.close()
@@ -232,7 +232,7 @@ def _satsolve_filein_stdout(F, cmd='sat4j'):
     import tempfile
 
     # Input formula must be on file.
-    cnf = tempfile.NamedTemporaryFile(delete=False)
+    cnf = tempfile.NamedTemporaryFile(mode='w', delete=False)
     cnf.write(F.dimacs())
     cnf.close()
 

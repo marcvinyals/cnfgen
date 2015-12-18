@@ -3,6 +3,8 @@
 """Implementation of Tseitin formulas
 """
 
+from __future__ import unicode_literals
+
 from cnfformula.cnf import CNF
 from cnfformula.cnf import parity_constraint
 

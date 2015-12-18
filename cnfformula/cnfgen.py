@@ -29,6 +29,7 @@ p cnf 5 3
 """
 
 from __future__ import print_function
+from __future__ import unicode_literals
 
 import os
 import sys
@@ -191,7 +192,10 @@ def command_line_utility(argv=sys.argv):
     setup_command_line_args(parser)
 
     # Sub command lines setup 
-    subparsers=parser.add_subparsers(title="Available formula types",metavar='<formula type>')
+    subparsers=parser.add_subparsers(title="Available formula types",
+                                     metavar='<formula type>',
+                                     dest='formula_type')
+    subparsers.required = True
     for sc in find_formula_subcommands():
         p=subparsers.add_parser(sc.name,help=sc.description)
         sc.setup_command_line(p)

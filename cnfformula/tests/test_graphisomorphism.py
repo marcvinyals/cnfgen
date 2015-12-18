@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 
+import unittest
+import networkx as nx
+
 from cnfformula import CNF
 from cnfformula import GraphAutomorphism,GraphIsomorphism
 
 from . import TestCNFBase
-
-import unittest
-import networkx as nx
-import StringIO
-
 
 class TestGraphIsomorphism(TestCNFBase):
     """Some basic test for the graph isomorphism formula."""

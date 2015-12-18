@@ -2,9 +2,11 @@
 # -*- coding:utf-8 -*-
 
 from __future__ import print_function
-from .cnf import CNF,parity_constraint
 
+from six.moves import xrange
 from itertools import product,combinations,permutations
+
+from .cnf import CNF,parity_constraint
 
 #
 # Transformation of a list of clauses

@@ -18,6 +18,8 @@ https://github.com/MassimoLauria/cnfgen.git
 
 
 from __future__ import print_function
+from __future__ import unicode_literals
+
 from itertools import product
 from itertools import combinations
 from collections import Counter
@@ -395,14 +397,14 @@ class CNF(object):
             raise TypeError("%s is not a well formatted clause" %clause)
 
         # Check literal repetitions
-        if (not literal_repetitions) and max(Counter(clause).values() + [0])>1:
+        if (not literal_repetitions) and len(clause) != len(set(clause)):
             counter  = Counter(clause)
             repeated = [l for (l,c) in counter.iteritems() if c>1]
             raise ValueError("Forbidden repeated literals %s" % repeated)
 
         # Check opposite literals
         if not opposite_literals:
-            positive     = [v for (p,v) in clause if p ]
+            positive     = {v for (p,v) in clause if p}
             intersection = [v for (p,v) in clause if not p and v in positive]
             if len(intersection):
                 raise ValueError("Forbidden opposite literals for variables %s" % intersection)
@@ -448,7 +450,7 @@ class CNF(object):
         """
         assert self._coherent
         vars_iterator = iter(self._index2name)
-        vars_iterator.next()
+        next(vars_iterator)
         return vars_iterator
     
     def clauses(self):
@@ -497,7 +499,7 @@ class CNF(object):
         .. [1] http://www.satlib.org/Benchmarks/SAT/satformat.ps
 
         """
-        from cStringIO import StringIO
+        from io import StringIO
         output = StringIO()
         self._dimacs_dump_clauses(output, export_header)
         return output.getvalue()
@@ -588,12 +590,12 @@ class CNF(object):
 
         latex_preamble=r"""%
 \documentclass[10pt,a4paper]{article}
-\usepackage[margin=1in]{geometry}
-\usepackage{amsmath}
-\usepackage{listings}
+\\usepackage[margin=1in]{geometry}
+\\usepackage{amsmath}
+\\usepackage{listings}
 """
         
-        from cStringIO import StringIO
+        from io import StringIO
         output = StringIO()
         
         # formula header as a LaTeX comment

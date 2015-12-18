@@ -5,6 +5,7 @@
 
 import itertools
 import random
+from six.moves import xrange
 
 from cnfformula.cnf import CNF
 
@@ -21,7 +22,7 @@ list assignments.
 """
     for assignment in assignments:
 
-        if  any( assignment.has_key(var) and polarity == assignment[var]
+        if  any( var in assignment and polarity == assignment[var]
                  for (polarity, var) in cls):
             continue
 

@@ -1,9 +1,11 @@
+from six.moves import xrange
+
+import networkx as nx
+
 from cnfformula import CNF,PebblingFormula
 
 from . import TestCNFBase
-from test_commandline_helper import TestCommandline
-
-import networkx as nx
+from .test_commandline_helper import TestCommandline
 
 class TestPebbling(TestCNFBase) :
     def test_null_graph(self) :
@@ -28,7 +30,7 @@ class TestPebbling(TestCNFBase) :
             [[(True,0)]] + \
             [[(False,i-1),(True,i)] for i in xrange(1,10)] + \
             [[(False,9)]]
-        self.assertListEqual(list(peb.variables()),range(10))
+        self.assertListEqual(list(peb.variables()),list(range(10)))
         self.assertSetSetEqual(peb.clauses(),clauses)
 
     def test_pyramid(self) :
@@ -43,7 +45,7 @@ class TestPebbling(TestCNFBase) :
             [[(True,i)] for i in xrange(10)] + \
             [[(False,i) for i in xrange(10)] + [(True,10)]] + \
             [[(False,10)]]
-        self.assertListEqual(list(peb.variables()),range(11))
+        self.assertListEqual(list(peb.variables()),list(range(11)))
         self.assertSetSetEqual(peb.clauses(),clauses)
         
     def test_cycle(self) :

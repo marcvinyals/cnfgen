@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
+from six.moves import xrange
+import random
+import itertools
+
 import cnfformula
 
 from . import TestCNFBase
-
-import random
-import itertools
 
 class TestCNF(TestCNFBase) :
 

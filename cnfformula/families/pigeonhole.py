@@ -3,6 +3,8 @@
 """Implementation of the pigeonhole principle formulas
 """
 
+from six.moves import xrange
+
 from cnfformula.cnf import CNF
 from cnfformula.cmdline import BipartiteGraphHelper
 

@@ -3,16 +3,18 @@
 """Implementation of the ordering principle formulas
 """
 
+from __future__ import unicode_literals
+
+from itertools import combinations,permutations
+from six.moves import xrange
+
+import networkx
+
 from cnfformula.cnf import CNF
 from cnfformula.cmdline import SimpleGraphHelper
 
 import cnfformula.cmdline  
 import cnfformula.families
-
-
-from itertools import combinations,permutations
-
-import networkx
 
 @cnfformula.families.register_cnf_generator
 def OrderingPrinciple(size,total=False,smart=False,plant=False,knuth=0):

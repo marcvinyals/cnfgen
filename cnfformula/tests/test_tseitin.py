@@ -1,7 +1,9 @@
+from __future__ import unicode_literals
+
 from cnfformula import TseitinFormula
 
 from . import TestCNFBase
-from test_commandline_helper import TestCommandline
+from .test_commandline_helper import TestCommandline
 
 import unittest
 import networkx as nx

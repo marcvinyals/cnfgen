@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 
+from __future__ import unicode_literals
+
+from io import StringIO as sio
+from six.moves import xrange
+
+import networkx as nx
 import unittest
 
 import cnfformula
 from cnfformula.graphs import readGraph,writeGraph
-
-from StringIO import StringIO as sio
-import networkx as nx
 
 from . import example_filename
 
