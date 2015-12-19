@@ -18,7 +18,6 @@ https://github.com/MassimoLauria/cnfgen.git
 
 
 from __future__ import print_function
-from __future__ import unicode_literals
 
 from itertools import product
 from itertools import combinations
@@ -26,7 +25,7 @@ from collections import Counter
 
 from . import prjdata as pd
 
-_default_header="Generated with `cnfgen` (C) {}\n{}\n\n".format(pd.__copyright__,
+_default_header=u"Generated with `cnfgen` (C) {}\n{}\n\n".format(pd.__copyright__,
                                                                 pd.__url__)
 
 class CNF(object):
@@ -519,18 +518,18 @@ class CNF(object):
 
         # A nice header
         if export_header:
-            for line in self.header.split("\n")[:-1]:
-                output.write(("c "+line).rstrip()+"\n")
+            for line in self.header.split(u"\n")[:-1]:
+                output.write((u"c "+line).rstrip()+u"\n")
 
         # Formula specification
-        output.write("p cnf {0} {1}".format(n, m))
+        output.write(u"p cnf {0} {1}".format(n, m))
 
         if len(self._clauses) == 0:
-            output.write("\n")   # this newline makes `lingeling` solver happy
+            output.write(u"\n")   # this newline makes `lingeling` solver happy
 
         # Clauses
         for cls in self._clauses:
-            output.write("\n" + " ".join([str(l) for l in cls + (0,)]))
+            output.write(u"\n" + " ".join([str(l) for l in cls + (0,)]))
 
     def latex(self, export_header=True, full_document=False, extra_text=None):
         """Output a LaTeX version of the CNF formula
@@ -606,15 +605,15 @@ class CNF(object):
         # document opening
         if full_document:
             output.write(latex_preamble)
-            output.write("\\begin{document}\n")
-            output.write("\\title{{{}}}\n".format(self.header.split('\n')[0]))
-            output.write("\\author{CNFgen formula generator}\n")
-            output.write("\\maketitle\n")
-            output.write("\\noindent\\textbf{Formula header:}\n")
-            output.write("\\begin{lstlisting}[breaklines]\n")
+            output.write(u"\\begin{document}\n")
+            output.write(u"\\title{{{}}}\n".format(self.header.split(u'\n')[0]))
+            output.write(u"\\author{CNFgen formula generator}\n")
+            output.write(u"\\maketitle\n")
+            output.write(u"\\noindent\\textbf{Formula header:}\n")
+            output.write(u"\\begin{lstlisting}[breaklines]\n")
             output.write(self.header)
-            output.write("\\end{lstlisting}\n")
-            output.write("\\bigskip\n")
+            output.write(u"\\end{lstlisting}\n")
+            output.write(u"\\bigskip\n")
 
         if extra_text is not None and full_document:
             output.write(extra_text)
@@ -631,43 +630,43 @@ class CNF(object):
 
         def write_clause(cls, first,full_document):
             """Write the clause in LaTeX."""
-            output.write("\n&" if first  else " \\\\\n&")
-            output.write("       " if full_document or first else " \\land ")
+            output.write(u"\n&" if first  else u" \\\\\n&")
+            output.write(u"       " if full_document or first else u" \\land ")
 
             # build the latex clause
             if len(cls) == 0:
-                output.write("\\square")
+                output.write(u"\\square")
             elif full_document:
-                output.write(" \\lor ".join(map_literals(l) for l in cls))
+                output.write(u" \\lor ".join(map_literals(l) for l in cls))
             else:
-                output.write("\\left( " + \
-                             " \\lor ".join(map_literals(l) for l in cls) + \
-                             " \\right)")
+                output.write(u"\\left( " + \
+                             u" \\lor ".join(map_literals(l) for l in cls) + \
+                             u" \\right)")
 
         # Output the clauses
         clauses_number = len(self._clauses)
         if full_document:
-            output.write("\\noindent\\textbf{{CNF with {} variables and and {} clauses:}}\n".\
+            output.write(u"\\noindent\\textbf{{CNF with {} variables and and {} clauses:}}\n".\
                          format(len(self._name2index),clauses_number))
 
-        output.write("\\begin{align}")
+        output.write(u"\\begin{align}")
         
         if clauses_number==0:
-            output.write("\n   \\top")
+            output.write(u"\n   \\top")
         else:
             for i,clause in enumerate(self._clauses):
                 if i% clauses_per_page ==0 and i!=0 and full_document:
-                    output.write("\n\\end{align}\\pagebreak")
-                    output.write("\n\\begin{align}")
+                    output.write(u"\n\\end{align}\\pagebreak")
+                    output.write(u"\n\\begin{align}")
                     write_clause(clause, True,full_document)
                 else:
                     write_clause(clause, i==0,full_document)
 
-        output.write("\n\\end{align}")
+        output.write(u"\n\\end{align}")
 
         # document closing
         if full_document:
-            output.write("\n\\end{document}")
+            output.write(u"\n\\end{document}")
   
         return output.getvalue()
 

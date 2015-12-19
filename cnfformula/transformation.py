@@ -2,6 +2,8 @@
 # -*- coding:utf-8 -*-
 
 from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
 
 from six.moves import xrange
 from itertools import product,combinations,permutations
@@ -68,7 +70,7 @@ def transform_compressed_clauses(clauses,method='none',rank=None):
             lift=neglift
 
         substitute.max=max(var,substitute.max)
-        return [[ (l/abs(l))*offset*(var-1)+l for l in cls ] for cls in lift]
+        return [[ (l//abs(l))*offset*(var-1)+l for l in cls ] for cls in lift]
 
     substitute.max=0
            
@@ -89,7 +91,7 @@ def transform_compressed_clauses(clauses,method='none',rank=None):
     for i in xrange(input_variables):
         for cls in varlift:
             output_clauses += 1
-            yield [ (l/abs(l))*offset*i+l for l in cls ]
+            yield [ (l//abs(l))*offset*i+l for l in cls ]
 
     raise StopClauses(output_variables,output_clauses)
 
