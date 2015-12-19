@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 from io import StringIO as sio
+from io import BytesIO
 from six.moves import xrange
 
 import networkx as nx
@@ -64,7 +65,8 @@ class TestGraphIO(unittest.TestCase) :
 
     def test_low_level_gml_read_path2(self) :
 
-        G = nx.read_gml(sio(gml_path2))
+        # Should be a StringIO, workaround bug in NetworkX
+        G = nx.read_gml(BytesIO(gml_path2.encode('ascii')))
 
         self.assertEqual(G.order(), 3)
         self.assertEqual(len(G.edges()), 2)
@@ -95,7 +97,8 @@ class TestGraphIO(unittest.TestCase) :
     def test_readGraph_gml_path2(self) :
 
         self.assertRaises(ValueError, readGraph, sio(gml_path2), graph_type='simple')
-        G = readGraph(sio(gml_path2), graph_type='simple', file_format = 'gml')
+        # Should be a StringIO, workaround bug in NetworkX
+        G = readGraph(BytesIO(gml_path2.encode('ascii')), graph_type='simple', file_format = 'gml')
         self.assertEqual(G.order(), 3)
         self.assertEqual(len(G.edges()), 2)
 

@@ -78,9 +78,7 @@ def _process_graph_io_arguments(iofile,
     """Test if the argument for the graph I/O functions make sense"""
 
     # Check the file
-    if not isinstance(iofile,io.TextIOBase) and \
-       not isinstance(iofile,file) and \
-       not isinstance(iofile,io.StringIO):
+    if not isinstance(iofile,io.IOBase):
         raise ValueError("The input source \"{}\" does not correspond to a file".format(iofile))
     
     # Check the graph type specification
