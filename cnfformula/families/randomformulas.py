@@ -3,6 +3,8 @@
 """Random CNF Formulas
 """
 
+from __future__ import unicode_literals
+
 import itertools
 import random
 from six.moves import xrange

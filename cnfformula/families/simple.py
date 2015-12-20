@@ -3,6 +3,8 @@
 """Implementation of simple formulas
 """
 
+from __future__ import unicode_literals
+
 from cnfformula.cnf import CNF
 
 import cnfformula.cmdline

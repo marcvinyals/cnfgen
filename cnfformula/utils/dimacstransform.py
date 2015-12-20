@@ -12,6 +12,7 @@ Accept a cnf in dimacs format in input
 """
 
 from __future__ import print_function
+from __future__ import unicode_literals
 import os
 
 from .. import available_transform

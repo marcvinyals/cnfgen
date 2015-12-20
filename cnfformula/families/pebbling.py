@@ -5,19 +5,17 @@
 
 from __future__ import print_function
 
+from itertools import product
+from collections import OrderedDict
+import sys
 
 from cnfformula.cnf import CNF
 from cnfformula.graphs import is_dag,enumerate_vertices
-
-from itertools import product
-from collections import OrderedDict
 
 from cnfformula.cmdline import DirectedAcyclicGraphHelper
 
 import cnfformula.families
 import cnfformula.cmdline
-
-import sys
 
 
 

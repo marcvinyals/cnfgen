@@ -3,6 +3,9 @@
 """Implementation of the pigeonhole principle formulas
 """
 
+from __future__ import unicode_literals
+
+from itertools import combinations
 from six.moves import xrange
 
 from cnfformula.cnf import CNF
@@ -10,8 +13,6 @@ from cnfformula.cmdline import BipartiteGraphHelper
 
 import cnfformula.cmdline
 import cnfformula.families
-
-from itertools import combinations
 
 @cnfformula.families.register_cnf_generator
 def PigeonholePrinciple(pigeons,holes,functional=False,onto=False):

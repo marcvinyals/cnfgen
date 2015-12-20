@@ -9,6 +9,10 @@ solvers, see
   `cnfformula.utils.solver.supported_satsolvers`
 """
 
+from __future__ import unicode_literals
+
+import six
+
 __all__ = ["supported_satsolvers", "is_satisfiable", "have_satsolver"]
 
 
@@ -328,9 +332,9 @@ def have_satsolver(solvers=None):
 
     if solvers is None:
         solvers = supported_satsolvers()
-    elif type(solvers) == str:
+    elif type(solvers) in six.string_types:
         solvers = [solvers]
-    elif any([type(s) != str for s in solvers]):
+    elif not all([isinstance(s,six.string_types) for s in solvers]):
         raise TypeError("'solvers' type must be either 'str' or 'list(str)'.")
 
     for solvername in solvers:

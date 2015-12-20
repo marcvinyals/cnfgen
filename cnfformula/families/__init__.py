@@ -3,6 +3,7 @@
 """Formula families useful in proof complexity
 """
 
+from __future__ import unicode_literals
 
 __cnf_generator_mark = "_is_cnf_generator" 
 

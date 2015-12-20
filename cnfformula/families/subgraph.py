@@ -3,11 +3,7 @@
 """Implementation of formulas that check for subgraphs
 """
 
-from cnfformula.cnf import CNF
-from cnfformula.cmdline import SimpleGraphHelper
-
-import cnfformula.families
-import cnfformula.cmdline
+from __future__ import unicode_literals
 
 from itertools import combinations
 from itertools import product
@@ -17,6 +13,12 @@ from networkx  import complete_graph
 from networkx  import empty_graph
 
 from textwrap import dedent
+
+from cnfformula.cnf import CNF
+from cnfformula.cmdline import SimpleGraphHelper
+
+import cnfformula.families
+import cnfformula.cmdline
 
 @cnfformula.families.register_cnf_generator
 def SubgraphFormula(graph,templates):

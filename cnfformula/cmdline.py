@@ -12,7 +12,7 @@ https://github.com/MassimoLauria/cnfgen.git
 """
 
 from __future__ import print_function
-
+from __future__ import unicode_literals
     
 import sys
 import argparse

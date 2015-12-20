@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import unicode_literals
+
 __project_name__        = 'CNFgen'
 __project_description__ = 'CNF formula generator'
 

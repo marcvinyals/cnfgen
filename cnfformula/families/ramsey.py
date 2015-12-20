@@ -3,13 +3,15 @@
 """CNF Formulas for Ramsey-like statements
 """
 
+from __future__ import unicode_literals
+
+from textwrap import dedent
+from itertools import combinations
+
 from cnfformula.cnf import CNF
 
 import cnfformula.cmdline
 import cnfformula.families
-
-from textwrap import dedent
-from itertools import combinations
 
 @cnfformula.families.register_cnf_generator
 def RamseyLowerBoundFormula(s,k,N):

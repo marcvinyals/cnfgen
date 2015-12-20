@@ -3,14 +3,15 @@
 """Graph isomorphimsm/automorphism formulas
 """
 
+from __future__ import unicode_literals
+
+from itertools import combinations
+
 from cnfformula.cnf import CNF
 from cnfformula.cmdline import SimpleGraphHelper
 
 from cnfformula.cmdline  import register_cnfgen_subcommand
 from cnfformula.families import register_cnf_generator
-
-from itertools import combinations
-
 
 
 

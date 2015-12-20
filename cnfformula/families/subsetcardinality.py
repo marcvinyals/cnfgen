@@ -3,6 +3,8 @@
 """Implementation of subset cardinality formulas
 """
 
+from __future__ import unicode_literals
+
 from cnfformula.cnf import CNF
 from cnfformula.cnf import loose_majority_constraint,loose_minority_constraint
 from cnfformula.cnf import exactly_half_floor,exactly_half_ceil
