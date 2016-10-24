@@ -7,7 +7,7 @@ from __future__ import print_function
 
 
 from cnfformula.cnf import CNF
-from cnfformula.graphs import is_dag,enumerate_vertices
+from cnfformula.graphs import is_dag,enumerate_vertices,bipartite_random_regular,bipartite_sets
 
 from itertools import product
 from collections import OrderedDict
@@ -18,6 +18,7 @@ import cnfformula.families
 import cnfformula.cmdline
 
 import sys
+import networkx as nx
 
 
 
@@ -72,7 +73,7 @@ def PebblingFormula(digraph):
 
 
 @cnfformula.families.register_cnf_generator
-def StoneFormula(D,nstones):
+def StoneFormula(D,G):
     """Stones formulas
 
     The stone formulas have been introduced in [2]_ and generalized in
@@ -130,26 +131,22 @@ def StoneFormula(D,nstones):
     if not is_dag(D):
         raise ValueError("Stone formulas are defined only for directed acyclic graphs.")
     
-    if nstones<0:
-        raise ValueError("There must be at least one stone.")
-
     cnf = CNF()
 
     if hasattr(D, 'name'):
-        cnf.header = "Stone formula of: " + D.name + "\nwith " + str(nstones) + " stones\n" + cnf.header
+        cnf.header = "Stone formula of: " + D.name + "\nwith " + str(G) + " stones\n" + cnf.header
     else:
-        cnf.header = "Stone formula with " + str(nstones) + " stones\n" + cnf.header
+        cnf.header = "Stone formula with " + str(G) + " stones\n" + cnf.header
 
     # add variables in the appropriate order
     vertices=enumerate_vertices(D)
     position=dict((v,i) for (i,v) in enumerate(vertices))
-    stones=range(1,nstones+1)
+    _,stones = bipartite_sets(G)
     
     # Stones->Vertices variables
-    for v in vertices:
-        for j in stones:
-            cnf.add_variable("P_{{{0},{1}}}".format(v,j),
-                             description="Stone ${1}$ on vertex ${0}$".format(v,j))
+    for v,j in G.edges():
+        cnf.add_variable("P_{{{0},{1}}}".format(v,j),
+                         description="Stone ${1}$ on vertex ${0}$".format(v,j))
 
     # Color variables
     for j in stones:
@@ -158,13 +155,14 @@ def StoneFormula(D,nstones):
     
     # Each vertex has some stone
     for v in vertices:
-        cnf.add_clause([(True,"P_{{{0},{1}}}".format(v,j)) for j in stones])
-        
+        cnf.add_clause([(True,"P_{{{0},{1}}}".format(v,j)) for j in G.neighbors(v)])
+
     # If predecessors have red stones, the sink must have a red stone
     for v in vertices:
-        for j in stones:
+        for j in G.neighbors(v):
             pred=sorted(D.predecessors(v),key=lambda x:position[x])
-            for stones_tuple in product([s for s in stones if s!=j],repeat=len(pred)):
+            predstones = [[s for s in G.neighbors(p) if s!=j] for p in pred]
+            for stones_tuple in product(*predstones):
                 cnf.add_clause([(False, "P_{{{0},{1}}}".format(p,s)) for (p,s) in zip(pred,stones_tuple)] +
                                [(False, "P_{{{0},{1}}}".format(v,j))] +
                                [(False, "R_{{{0}}}".format(s)) for s in _uniqify_list(stones_tuple)] +
@@ -172,7 +170,7 @@ def StoneFormula(D,nstones):
                                strict=True)
         
         if D.out_degree(v)==0: #the sink
-            for j in stones:
+            for j in G.neighbors(v):
                 cnf.add_clause([ (False,"P_{{{0},{1}}}".format(v,j)),
                                  (False,"R_{{{0}}}".format(j))],
                                strict = True)
@@ -228,6 +226,7 @@ class StoneCmdHelper:
         """
         DirectedAcyclicGraphHelper.setup_command_line(parser)
         parser.add_argument('s',metavar='<s>',type=int,help="number of stones")
+        parser.add_argument('d',metavar='<d>',type=int,help="number of stones per vertex")
 
     @staticmethod
     def build_cnf(args):
@@ -236,9 +235,11 @@ class StoneCmdHelper:
         Arguments:
         - `args`: command line options
         """
-        D= DirectedAcyclicGraphHelper.obtain_graph(args)
+        D=DirectedAcyclicGraphHelper.obtain_graph(args)
+        D=nx.convert_node_labels_to_integers(D)
+        G=bipartite_random_regular(D.order(),args.s,args.d)
         try:
-            return StoneFormula(D,args.s)
+            return StoneFormula(D,G)
         except ValueError:
             print("\nError: Input graph must be a DAG, and a non negative # of stones.",file=sys.stderr)
             sys.exit(-1)
