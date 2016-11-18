@@ -5,8 +5,10 @@ class OPB(object):
         self._index2name = []
         self._name2index = {}
         self._constraints = []
+        self.header = ""
+        self.dimacs = self.to_opb
 
-    def to_opb(self):
+    def to_opb(self, export_header=False, extra_text=None):
         from cStringIO import StringIO
         output = StringIO()
         output.write("* #variable= {} #constraint= {}\n".format(
