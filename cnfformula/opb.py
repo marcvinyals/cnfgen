@@ -1,14 +1,17 @@
 from __future__ import print_function
 
-class OPB(object):
+from cnf import CNF
+
+class OPB(CNF):
     def __init__(self):
         self._index2name = []
         self._name2index = {}
         self._constraints = []
         self.header = ""
-        self.dimacs = self.to_opb
+        self.add_clause_unsafe = self.add_constraint
+        self.add_clause = self.add_constraint
 
-    def to_opb(self, export_header=False, extra_text=None):
+    def dimacs(self, export_header=False, extra_text=None):
         from cStringIO import StringIO
         output = StringIO()
         output.write("* #variable= {} #constraint= {}\n".format(
@@ -31,18 +34,20 @@ class OPB(object):
         self._index2name.append(var)
         self._name2index[var] = len(self._index2name)-1
 
-    def add_constraint(self, constraint):
+    def add_constraint(self, constraint, strict=False):
+        freeterm = constraint[-1]
+        if isinstance(freeterm,tuple):
+            # Got a disjunction
+            constraint = [(1,)+lit for lit in constraint] + [1]
         self._constraints.append(constraint)
-        
-    def add_clause(self, clause, strict=False):
-        self.add_constraint([(1,)+lit for lit in clause] + [1])
 
-    def add_geq_constraint(self, variables, lower_bound):
-        self.add_constraint([(1,True,var) for var in variables] + [lower_bound])
-        
-    def add_leq_constraint(self, variables, upper_bound):
-        self.add_constraint([(-1,True,var) for var in variables] + [-upper_bound])
+    @classmethod
+    def _inequality_constraint_builder(cls,variables, k, greater=False):
+        if greater:
+            yield [(1,True,var) for var in variables] + [k+1]
+        else:
+            yield [(-1,True,var) for var in variables] + [-k+1]
 
-    def add_eq_constraint(self, variables, value):
-        self.add_geq_constraint(variables, value)
-        self.add_leq_constraint(variables, value)
+
+import cnf
+cnf.CNF = OPB

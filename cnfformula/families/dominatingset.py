@@ -4,7 +4,6 @@
 """
 
 
-from cnfformula.opb import OPB
 from cnfformula.cmdline import SimpleGraphHelper
 
 from cnfformula.cmdline  import register_cnfgen_subcommand
@@ -15,7 +14,7 @@ from itertools import combinations,combinations_with_replacement,product
 
 @register_cnf_generator
 def DominatingSet(G):
-    F=OPB()
+    F=CNF()
 
     def D(v):
         return "x_{{{0}}}".format(v)
@@ -34,7 +33,8 @@ def DominatingSet(G):
         F.add_variable(D(v))
 
     # Not too many true variables
-    F.add_leq_constraint([D(v) for v in V],d)
+    for c in F.less_or_equal_constraint([D(v) for v in V],d):
+        F.add_clause(c)
 
     # Every neighborhood must have a true D variable
     neighborhoods = sorted( set(N(v) for v in V) )
