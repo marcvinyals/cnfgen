@@ -30,7 +30,7 @@ class OPB(CNF):
 
         return output.getvalue()
         
-    def add_variable(self, var):
+    def add_variable(self, var, description=None):
         self._index2name.append(var)
         self._name2index[var] = len(self._index2name)-1
 
