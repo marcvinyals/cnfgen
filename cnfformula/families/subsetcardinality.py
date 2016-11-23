@@ -3,6 +3,8 @@
 """Implementation of subset cardinality formulas
 """
 
+from cnfformula.cnf import CNF
+
 from cnfformula.cmdline import BipartiteGraphHelper
 
 from cnfformula.graphs import bipartite_sets,enumerate_edges,neighbors

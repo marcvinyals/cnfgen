@@ -103,6 +103,10 @@ class CNF(object):
         for c in clauses or []:
             self.add_clause(c)
 
+        if hasattr(CNF,"_opb"):
+            from opb import OPB
+            self.__class__ = OPB
+            OPB.__init__(self)
 
     # Formula contains an header property
     def _set_header(self, value):
@@ -1374,4 +1378,3 @@ class CNF(object):
                 for (i1,i2),(j1,j2) in pairs_of_maps:
                     yield self.forbid_image(i1,j2) + self.forbid_image(i2,j1)
 
-import opb

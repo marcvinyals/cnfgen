@@ -70,8 +70,8 @@ def setup_command_line_args(parser):
                         formula to standard output. (default: -)
                         """)
     parser.add_argument('--output-format','-of',
-                        choices=['latex','dimacs'],
-                        default='dimacs',
+                        choices=['latex','dimacs','opb'],
+                        default='opb',
                         help="""
                         Output format of the formulas. 'latex' is
                         convenient to insert formulas into papers, and
@@ -139,7 +139,6 @@ def command_line_utility(argv=sys.argv):
     argv: list, optional
         The list of token with the command line arguments/options.
     """
-
 
     # Formula generators cmdline setup 
     import families
@@ -217,6 +216,10 @@ a sequence of transformations.
     # If necessary, init the random generator
     if hasattr(args,'seed') and args.seed:
         random.seed(args.seed)
+
+    if args.output_format == 'opb':
+        import cnf
+        cnf.CNF._opb = True
 
     # Generate the formula
     try:

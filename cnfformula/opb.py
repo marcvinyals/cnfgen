@@ -47,7 +47,3 @@ class OPB(CNF):
             yield [(1,True,var) for var in variables] + [k+1]
         else:
             yield [(-1,True,var) for var in variables] + [-k+1]
-
-
-import cnf
-cnf.CNF = OPB

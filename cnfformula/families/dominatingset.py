@@ -3,6 +3,7 @@
 """Formulas that encode coloring related problems
 """
 
+from cnfformula.cnf import CNF
 
 from cnfformula.cmdline import SimpleGraphHelper
 

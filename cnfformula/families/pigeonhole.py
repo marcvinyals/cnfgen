@@ -79,7 +79,7 @@ def PigeonholePrinciple(pigeons,holes,functional=False,onto=False):
     php.header="{0} formula for {1} pigeons and {2} holes\n".format(formula_name,pigeons,holes)\
         + php.header
 
-    
+
     mapping=php.unary_mapping(
         xrange(1,pigeons+1),
         xrange(1,holes+1),
