@@ -1087,7 +1087,7 @@ class CNF(object):
     @classmethod
     def unary_mapping(cls, D, R, **kwargs):
         return cls._unary_mapping(cls, D, R, **kwargs)
-    
+
     class _unary_mapping(object):
         """Unary CNF representation of a mapping between two sets."""
         
@@ -1152,7 +1152,7 @@ class CNF(object):
                 
             """
             self.cls = cls
-            
+
             self.Domain = list(D)
             self.Range  = list(R)
 
@@ -1377,4 +1377,3 @@ class CNF(object):
 
                 for (i1,i2),(j1,j2) in pairs_of_maps:
                     yield self.forbid_image(i1,j2) + self.forbid_image(i2,j1)
-

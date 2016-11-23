@@ -4,10 +4,7 @@ from cnf import CNF
 
 class OPB(CNF):
     def __init__(self):
-        self._index2name = []
-        self._name2index = {}
         self._constraints = []
-        self.header = ""
         self.add_clause_unsafe = self.add_constraint
         self.add_clause = self.add_constraint
 
@@ -30,10 +27,6 @@ class OPB(CNF):
 
         return output.getvalue()
         
-    def add_variable(self, var, description=None):
-        self._index2name.append(var)
-        self._name2index[var] = len(self._index2name)-1
-
     def add_constraint(self, constraint, strict=False):
         freeterm = constraint[-1]
         if isinstance(freeterm,tuple):
@@ -42,7 +35,7 @@ class OPB(CNF):
         self._constraints.append(constraint)
 
     @classmethod
-    def _inequality_constraint_builder(cls,variables, k, greater=False):
+    def _inequality_constraint_builder(cls, variables, k, greater=False):
         if greater:
             yield [(1,True,var) for var in variables] + [k+1]
         else:
