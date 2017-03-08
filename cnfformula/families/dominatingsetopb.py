@@ -13,7 +13,7 @@ from cnfformula.families import register_cnf_generator
 from cnfformula.graphs import enumerate_vertices,neighbors
 
 @register_cnf_generator
-def DominatingSetOPB(G):
+def DominatingSetOPB(G,d):
     F=CSP()
 
     def D(v):
@@ -25,8 +25,8 @@ def DominatingSetOPB(G):
     # Fix the vertex order
     V=enumerate_vertices(G)
 
-    avgdegree=sum(len(set(N(v))) for v in V)/len(V)
-    d=len(V)/avgdegree
+    #avgdegree=sum(len(set(N(v))) for v in V)/len(V)
+    #d=len(V)/(avgdegree+1)
     
     # Create variables
     for v in V:
@@ -57,6 +57,7 @@ class DominatingSetCmdHelper(object):
         Arguments:
         - `parser`: parser to load with options.
         """
+        parser.add_argument('d',metavar='<d>',type=int,action='store',help="size of the dominating set")
         SimpleGraphHelper.setup_command_line(parser)
 
 
@@ -68,4 +69,4 @@ class DominatingSetCmdHelper(object):
         - `args`: command line options
         """
         G = SimpleGraphHelper.obtain_graph(args)
-        return DominatingSetOPB(G)
+        return DominatingSetOPB(G, args.d)
