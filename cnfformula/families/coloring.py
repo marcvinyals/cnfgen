@@ -221,10 +221,16 @@ class EECCmdHelper(object):
     
     @staticmethod
     def setup_command_line(parser):
-        parser.add_argument('T',metavar='<T>',type=int,action='store',help="Truth mass in the unbalancedness constraint")
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('--mass',metavar='<T>',type=int,action='store',help="Truth mass in the unbalancedness constraint")
+        group.add_argument('--rational',action='store_true',help="Set truth mass to 2E")
+        group.add_argument('--no-rational',action='store_true',help="Set truth mass to 2E-1")
         SimpleGraphHelper.setup_command_line(parser)
 
     @staticmethod
     def build_cnf(args):
-        G = SimpleGraphHelper.obtain_graph(args) 
-        return ExtendedEvenColoringFormula(G,args.T)
+        G = SimpleGraphHelper.obtain_graph(args)
+        T = args.mass
+        if args.rational : T = 2*G.size()
+        if args.no_rational : T = 2*G.size()-1
+        return ExtendedEvenColoringFormula(G,T)
