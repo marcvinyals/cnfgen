@@ -145,7 +145,36 @@ def EvenColoringFormula(G):
 
     return F
 
+@register_cnf_generator
+def ExtendedEvenColoringFormula(G,T):
+    F = EvenColoringFormula(G)
 
+    def var_name(u,v,c):
+        if u<=v:
+            return '{2}_{{{0},{1}}}'.format(u,v,c)
+        else:
+            return '{2}_{{{0},{1}}}'.format(v,u,c)
+
+    true_vars = [var_name(u,v,'t') for (u,v) in enumerate_edges(G)]
+    false_vars = [var_name(u,v,'f') for (u,v) in enumerate_edges(G)]
+
+    for var in true_vars:
+        F.add_variable(var)
+    for var in false_vars:
+        F.add_variable(var)
+
+    for (u, v) in enumerate_edges(G):
+        F.add_clause([(True,var_name(u,v,'t')),
+                      (False,var_name(u,v,'x'))],strict=True)
+        F.add_clause([(True,var_name(u,v,'f')),
+                      (True,var_name(u,v,'x'))],strict=True)
+
+    F.add_constraint(
+        [(-3,True,var) for var in true_vars] +
+        [(-1,True,var) for var in false_vars] + [-T])
+
+    return F
+        
 @register_cnfgen_subcommand
 class KColorCmdHelper(object):
     """Command line helper for k-color formula
@@ -185,8 +214,22 @@ class ECCmdHelper(object):
     def setup_command_line(parser):
         SimpleGraphHelper.setup_command_line(parser)
 
-
     @staticmethod
     def build_cnf(args):
         G = SimpleGraphHelper.obtain_graph(args) 
         return EvenColoringFormula(G)
+
+@register_cnfgen_subcommand
+class EECCmdHelper(object):
+    name='extec'
+    description='extended even coloring formulas'
+    
+    @staticmethod
+    def setup_command_line(parser):
+        parser.add_argument('T',metavar='<T>',type=int,action='store',help="Truth mass in the unbalancedness constraint")
+        SimpleGraphHelper.setup_command_line(parser)
+
+    @staticmethod
+    def build_cnf(args):
+        G = SimpleGraphHelper.obtain_graph(args) 
+        return ExtendedEvenColoringFormula(G,args.T)
