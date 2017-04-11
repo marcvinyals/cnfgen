@@ -171,7 +171,7 @@ def ExtendedEvenColoringFormula(G,T):
 
     F.add_constraint(
         [(-3,True,var) for var in true_vars] +
-        [(-1,True,var) for var in false_vars] + [-T])
+        [(-1,True,var) for var in false_vars] + [">="] + [-T])
 
     return F
         
