@@ -812,7 +812,12 @@ class CNF(object):
             lhs = " ".join( "{}1 x{}".format("+" if l >= 0 else "-",abs(l)) for l in lits)
             rhs = str(thr - len([i for i in lits if i<0]))
             output.write(lhs + " " + sign + " " + rhs + ";\n")
-                    
+
+        def _print_weighted_ineq(lits, sign, thr):
+            lhs = " ".join( "{}{} x{}".format("+" if l*c >= 0 else "-",abs(c),abs(l)) for c,l in lits)
+            rhs = str(thr - sum([c for c,l in lits if l<0]))
+            output.write(lhs + " " + sign + " " + rhs + ";\n")
+            
         # Normalize inequalities
         for cnst in self._constraints:
 
@@ -841,6 +846,9 @@ class CNF(object):
 
             elif type(new_cnst)==less:
                 _print_ineq([-l for l in new_cnst],">=", len(new_cnst) - new_cnst.threshold + 1)
+
+            if type(new_cnst)==weighted_geq:
+                _print_weighted_ineq(new_cnst,">=",new_cnst.threshold)
         
         return output.getvalue()
     
@@ -1311,6 +1319,12 @@ class CNF(object):
         threshold = len(variables)/2
         return self.add_equal_to(variables,threshold)
 
+    def add_weighted_geq(self, weighted_literals, threshold):
+        coefficients = [a for a,b,c in weighted_literals]
+        literals = [(b,c) for a,b,c in weighted_literals]
+        compressed_literals = self._check_and_compress_literals(literals)
+        ineq = weighted_geq(*zip(coefficients,compressed_literals),threshold=threshold)
+        self._constraints.append(ineq)
 
 class unary_mapping(object):
     """Unary CNF representation of a mapping between two sets."""
@@ -2086,3 +2100,29 @@ class eq(tuple):
             yield c
         for c in geq(*self,threshold=self.value).clauses():
             yield c
+
+class weighted_geq(tuple):
+    def __new__(cls,*args,**kw):
+        if "threshold" not in kw:
+            raise TypeError("GREATER OR EQUAL constraints must have \'threshold\' keyword argument")
+        self = super(weighted_geq,cls).__new__(cls,args)
+        self.threshold = kw['threshold']
+        return self
+
+    def __eq__(self,other):
+        return self.threshold == other.threshold and super(geq,self).__eq__(other)
+
+    def __repr__(self):
+        return "{}({}, threshold={})".format("geq",
+                                             ", ".join(str(i) for i in self),
+                                             self.threshold)
+
+    def __str__(self):
+        literals = [ "{}{}{}".format(c,"" if l>0 else "¬",abs(l)) for c,l in self ]
+        return "{} {} {}".format(" + ".join(literals),">=",self.threshold)
+    
+    def n_clauses(self):
+        raise NotImplementedError("Cannot encode weighted greater-or-equal into CNF")
+
+    def clauses(self):
+        raise NotImplementedError("Cannot encode weighted greater-or-equal into CNF")

@@ -4,7 +4,7 @@
 """
 
 
-from cnfformula.cnf import CNF
+from cnfformula.cnf import CNF, weighted_geq
 from cnfformula.cmdline import SimpleGraphHelper
 
 from cnfformula.cmdline  import register_cnfgen_subcommand
@@ -145,7 +145,36 @@ def EvenColoringFormula(G):
 
     return F
 
+@register_cnf_generator
+def ExtendedEvenColoringFormula(G,T):
+    F = EvenColoringFormula(G)
+    F.mode_strict()
 
+    def var_name(u,v,c):
+        if u<=v:
+            return '{2}_{{{0},{1}}}'.format(u,v,c)
+        else:
+            return '{2}_{{{0},{1}}}'.format(v,u,c)
+
+    true_vars = [var_name(u,v,'t') for (u,v) in enumerate_edges(G)]
+    false_vars = [var_name(u,v,'f') for (u,v) in enumerate_edges(G)]
+
+    for var in true_vars:
+        F.add_variable(var)
+    for var in false_vars:
+        F.add_variable(var)
+
+    for (u, v) in enumerate_edges(G):
+        F.add_clause([(True,var_name(u,v,'t')),
+                      (False,var_name(u,v,'x'))])
+        F.add_clause([(True,var_name(u,v,'f')),
+                      (True,var_name(u,v,'x'))])
+
+    F.add_weighted_geq([(-3,True,var) for var in true_vars] +
+                         [(-1,True,var) for var in false_vars], -T)
+
+    return F
+        
 @register_cnfgen_subcommand
 class KColorCmdHelper(object):
     """Command line helper for k-color formula
@@ -185,8 +214,28 @@ class ECCmdHelper(object):
     def setup_command_line(parser):
         SimpleGraphHelper.setup_command_line(parser)
 
-
     @staticmethod
     def build_cnf(args):
         G = SimpleGraphHelper.obtain_graph(args) 
         return EvenColoringFormula(G)
+
+@register_cnfgen_subcommand
+class EECCmdHelper(object):
+    name='extec'
+    description='extended even coloring formulas'
+    
+    @staticmethod
+    def setup_command_line(parser):
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('--mass',metavar='<T>',type=int,action='store',help="Truth mass in the unbalancedness constraint")
+        group.add_argument('--rational',action='store_true',help="Set truth mass to 2E")
+        group.add_argument('--no-rational',action='store_true',help="Set truth mass to 2E-1")
+        SimpleGraphHelper.setup_command_line(parser)
+
+    @staticmethod
+    def build_cnf(args):
+        G = SimpleGraphHelper.obtain_graph(args)
+        T = args.mass
+        if args.rational : T = 2*G.size()
+        if args.no_rational : T = 2*G.size()-1
+        return ExtendedEvenColoringFormula(G,T)
