@@ -4,7 +4,7 @@
 """
 
 
-from cnfformula.cnf import CNF
+from cnfformula.cnf import CNF, weighted_geq
 from cnfformula.cmdline import SimpleGraphHelper
 
 from cnfformula.cmdline  import register_cnfgen_subcommand
@@ -148,6 +148,7 @@ def EvenColoringFormula(G):
 @register_cnf_generator
 def ExtendedEvenColoringFormula(G,T):
     F = EvenColoringFormula(G)
+    F.mode_strict()
 
     def var_name(u,v,c):
         if u<=v:
@@ -165,13 +166,12 @@ def ExtendedEvenColoringFormula(G,T):
 
     for (u, v) in enumerate_edges(G):
         F.add_clause([(True,var_name(u,v,'t')),
-                      (False,var_name(u,v,'x'))],strict=True)
+                      (False,var_name(u,v,'x'))])
         F.add_clause([(True,var_name(u,v,'f')),
-                      (True,var_name(u,v,'x'))],strict=True)
+                      (True,var_name(u,v,'x'))])
 
-    F.add_constraint(
-        [(-3,True,var) for var in true_vars] +
-        [(-1,True,var) for var in false_vars] + [">="] + [-T])
+    F.add_weighted_geq([(-3,True,var) for var in true_vars] +
+                         [(-1,True,var) for var in false_vars], -T)
 
     return F
         
