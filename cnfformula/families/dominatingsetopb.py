@@ -3,7 +3,7 @@
 """Formulas that encode coloring related problems
 """
 
-from cnfformula.csp import CSP
+from cnfformula.cnf import CNF
 
 from cnfformula.cmdline import SimpleGraphHelper
 
@@ -14,7 +14,7 @@ from cnfformula.graphs import enumerate_vertices,neighbors
 
 @register_cnf_generator
 def DominatingSetOPB(G,d):
-    F=CSP()
+    F=CNF()
 
     def D(v):
         return "x_{{{0}}}".format(v)
@@ -33,8 +33,7 @@ def DominatingSetOPB(G,d):
         F.add_variable(D(v))
 
     # Not too many true variables
-    for c in F.less_or_equal_constraint([D(v) for v in V],d):
-        F.add_clause(c)
+    F.add_less_or_equal([D(v) for v in V],d)
 
     # Every neighborhood must have a true D variable
     neighborhoods = sorted( set(N(v) for v in V) )
