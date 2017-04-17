@@ -411,6 +411,9 @@ class SimpleGraphHelper(GraphHelper):
         gr.add_argument('--addedges'+suffix,type=positive_int,action='store',metavar="<k>",
                         help="add k NEW random edges to the graph (applied last)")
 
+        gr.add_argument('--splitedge'+suffix,action='store_true',
+                        help="split an edge of the graph by adding a vertex in the middle")
+
         gr=parser.add_argument_group("I/O options for graph "+suffix)
         gr.add_argument('--savegraph'+suffix,'-sg'+suffix,
                             type=argparse.FileType('wb',0),
@@ -501,6 +504,18 @@ class SimpleGraphHelper(GraphHelper):
             G.add_edges_from(sample_missing_edges(G,k))
             if hasattr(G, 'name'):
                 G.name = "{} with {} new random edges".format(G.name,k)
+
+        if getattr(args,'splitedge'+suffix):
+            (u,v) = G.edges_iter().next()
+            G.remove_edge(u,v)
+            for i in range(G.order()+1):
+                if i not in G:
+                    new_node = i
+                    break
+            G.add_edge(u,new_node)
+            G.add_edge(v,new_node)
+            if hasattr(G, 'name'):
+                G.name = "{} with a split edge".format(G.name)
 
         # Output the graph is requested
         if getattr(args,'savegraph'+suffix) is not None:
