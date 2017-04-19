@@ -733,9 +733,8 @@ class CNF(object):
             output.write("\n")   # this newline makes `lingeling` solver happy
 
         # Clauses
-        for cnst in self._constraints:
-            for cls in cnst.clauses():
-                output.write("\n" + " ".join([str(l) for l in cls + (0,)]))
+        for cls in self._compressed_clauses():
+            output.write("\n" + " ".join([str(l) for l in cls + (0,)]))
 
     def opb(self, export_header=True, extra_text=None):
         """Produce the OPB encoding of the formula
@@ -807,40 +806,54 @@ class CNF(object):
                 for line in extra_text.split("\n"):
                     output.write(("* "+line).rstrip()+"\n")
 
-        def _print_ineq(lits,sign, thr):
+        def _print_lit_ineq(lits,sign, thr):
 
             lhs = " ".join( "{}1 x{}".format("+" if l >= 0 else "-",abs(l)) for l in lits)
             rhs = str(thr - len([i for i in lits if i<0]))
             output.write(lhs + " " + sign + " " + rhs + ";\n")
+
+        def _print_lin_ineq(cnst):
+
+            lhs = " ".join( "{} x{}".format(w,v) for w,v in cnst)
+            if type(cnst)==weighted_eq:
+                rhs = str(cnst.value)
+                op  = "="
+            elif type(cnst)==weighted_geq:
+                rhs = str(cnst.threshold)
+                op  = ">="
+            else:
+                raise RuntimeError("[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
+            output.write(lhs + " " + op + " " + rhs + ";\n")
                     
         # Normalize inequalities
         for cnst in self._constraints:
 
-            new_cnst = cnst
-
             # Representation clause by clause
-            if type(new_cnst) in [disj,xor]:
-                for cls in new_cnst.clauses():
-                    _print_ineq(cls,">=",1)
-                    continue
+            if type(cnst) in [disj,xor]:
+                for cls in cnst.clauses():
+                    _print_lit_ineq(cls,">=",1)
                 
             # Representation by equation
-            if type(new_cnst)==eq:
-                _print_ineq(new_cnst,"=",new_cnst.value)
-                continue
+            elif type(cnst)==eq:
+                _print_lit_ineq(cnst,"=",cnst.value)
 
             # Representation by inequality
-            if type(new_cnst)==geq:
-                _print_ineq(new_cnst,">=",new_cnst.threshold)
+            elif type(cnst)==geq:
+                _print_lit_ineq(cnst,">=",cnst.threshold)
 
-            elif type(new_cnst)==greater:
-                _print_ineq(new_cnst,">=",new_cnst.threshold+1)
+            elif type(cnst)==greater:
+                _print_lit_ineq(cnst,">=",cnst.threshold+1)
 
-            elif type(new_cnst)==leq:
-                _print_ineq([-l for l in new_cnst],">=", len(new_cnst) - new_cnst.threshold)
+            elif type(cnst)==leq:
+                _print_lit_ineq([-l for l in cnst],">=", len(cnst) - cnst.threshold)
 
-            elif type(new_cnst)==less:
-                _print_ineq([-l for l in new_cnst],">=", len(new_cnst) - new_cnst.threshold + 1)
+            elif type(cnst)==less:
+                _print_lit_ineq([-l for l in cnst],">=", len(cnst) - cnst.threshold + 1)
+
+            elif type(cnst) in [weighted_eq,weighted_geq]:
+                _print_lin_ineq(cnst)
+            else:
+                raise RuntimeError("[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
         
         return output.getvalue()
     
@@ -1240,9 +1253,6 @@ class CNF(object):
            variables in the constraint
         value: int
            target values
-     
-        Returns
-        -------
             a list of clauses
         """
         literals = [(True,v) for v in variables]
@@ -1257,10 +1267,6 @@ class CNF(object):
         ----------
         variables : list of variables
            variables in the constraint
-     
-        Returns
-        -------
-            a list of clauses
         """
         threshold = (len(variables)+1)//2
         self.add_greater_or_equal(variables, threshold)
@@ -1272,10 +1278,6 @@ class CNF(object):
         ----------
         variables : list of variables
            variables in the constraint
-     
-        Returns
-        -------
-            a list of clauses
         """
         threshold = len(variables)//2
         return self.add_less_or_equal(variables, threshold)
@@ -1288,10 +1290,6 @@ class CNF(object):
         ----------
         variables : list of variables
            variables in the constraint
-     
-        Returns
-        -------
-            a list of clauses
         """
         threshold = (len(variables)+1)/2
         return self.add_equal_to(variables,threshold)
@@ -1303,15 +1301,106 @@ class CNF(object):
         ----------
         variables : list of variables
            variables in the constraint
-     
-        Returns
-        -------
-            a list of clauses
         """
         threshold = len(variables)/2
         return self.add_equal_to(variables,threshold)
 
 
+    def add_linear(self, *args):
+        """Add clauses encoding an integer linear constraint
+     
+        Integer linear constraints can be added as constraints
+        to the formula, as a shortcut for an equivalent set of
+        clauses. Consider for example
+
+        .. math::
+
+            x_1 + 2 x_2 + 4 x_3 \geq 3
+        
+        that can be encoded as clauses
+     
+        .. math::
+
+            (\neg x_1  \lor x_2 \lor x_3) \wedge (x_1  \lor \neg x_2 \lor x_3) \wedge (x_1  \lor x_2 \lor x_3)
+
+        This inequality can be added to a formula `F` using
+
+        ::
+
+            F.add_linear(1,"x_1",2,"x_2",4,"x_3",">=", 3)
+
+        The arguments of :py:meth:`add_linear` are given as a sequence
+        of integer and strings: the second to last element is one
+        among `==`, `>=`, `<=`, `>`, `<` and determines the type of
+        constraint, the last element determines the value to which the
+        linear form is compared to. The preceding arguments must form
+        an even length sequence in which the summands are represented
+        by alternating the weight of each variable in the sum with
+        its name.
+
+
+        Examples
+        --------
+        >>> F = CNF()
+        >>> F.add_linear(1,"x_1",2,"x_2",4,"x_3",">=", 7)
+        >>> len(F)
+        7
+        >>> F = CNF()
+        >>> F.add_linear(1,"x_1",2,"x_2",4,"x_3",">=", 0)
+        >>> list(F)
+        []
+        >>> F = CNF()
+        >>> F.add_linear(1,"x_1",2,"x_2",4,"x_3","==", 5)
+        >>> len(F)
+        7
+        >>> F = CNF()
+        >>> F.add_linear(1,"x_1",2,"x_2",4,"x_3",">", 0)
+        >>> len(F)
+        1
+        
+        Parameters
+        ----------
+        *args : sequence of int and strings
+            See above.
+
+        """
+        if len(args)<2:
+            raise ValueError("Linear constraints require at least 2 args: comparison operator and value.")
+        variables = [(True,v) for v in args[1:-2:2]]
+        weights   = args[ :-2:2]
+        value     = args[-1]
+        op        = args[-2]
+
+        variables = self._check_and_compress_literals(variables)
+        cnst=None
+        
+        if op == '==':
+
+            cnst = weighted_eq(*zip(weights,variables),value=value)
+
+        elif op == '>=':
+
+            cnst = weighted_geq(*zip(weights,variables),threshold=value)
+
+        elif op == '>':
+
+            cnst = weighted_geq(*zip(weights,variables),threshold=value+1)
+
+        elif op == '<=':
+
+            cnst = weighted_geq(*zip((-w for w in weights),variables),threshold= - value)
+
+        elif op == '<':
+
+            cnst = weighted_geq(*zip((-w for w in weights),variables),threshold= - value + 1)
+
+        else:
+            raise ValueError("Comparison operator must be among ==, >=, <=, >, <.")
+        
+        self._constraints.append(cnst)
+        self._length += cnst.n_clauses()
+
+    
 class unary_mapping(object):
     """Unary CNF representation of a mapping between two sets."""
 
@@ -1630,7 +1719,7 @@ class disj(tuple):
 
             x_1 \vee \\neg x_3 \vee x_7
 
-        as 
+        is 
 
         ::
 
@@ -1678,7 +1767,7 @@ class xor(tuple):
 
             x_1 \\oplus \\neg x_3 \\oplus x_7 = 1 \\pmod{2}
 
-        as 
+        is 
 
         ::
         
@@ -1751,11 +1840,11 @@ class less(tuple):
 
              x_2 + \\neg x_3 + x_7 < 2
 
-        as 
+        is 
 
         ::
 
-             less((2,-3,7),2)
+             less(2,-3,7,value=2)
 
         Repeated or opposite literals are forbidden. In case one of these
         things occur the `n_clauses` and `clauses` methods have
@@ -1832,11 +1921,11 @@ class leq(tuple):
 
              x_2 + \\neg x_3 + \\neq x_4 + x_7 \leq 2
 
-        as 
+        is 
 
         ::
 
-             leq((2,-3,-4,7),2)
+             leq(2,-3,-4,7,value=2)
 
         If there are repeated or opposite literals, then the constraint
         could make no sense. In particular `n_clauses` and `clauses`
@@ -1895,11 +1984,11 @@ class greater(tuple):
 
              x_2 + \\neg x_3 + \\neq x_4 + x_7 > 2
 
-        as 
+        is 
 
         ::
 
-             greater((2,-3,-4,7),2)
+             greater(2,-3,-4,7,value=2)
 
         If there are repeated or opposite literals, then the constraint
         could make no sense. In particular `n_clauses` and `clauses`
@@ -1977,11 +2066,11 @@ class geq(tuple):
 
              x_2 + \\neg x_3 + \\neq x_4 + x_7 \geq 2
 
-        as 
+        is 
 
         ::
 
-             geq((2,-3,-4,7),2)
+             geq(2,-3,-4,7,value=2)
 
         If there are repeated or opposite literals, then the constraint
         could make no sense. In particular `n_clauses` and `clauses`
@@ -2037,11 +2126,11 @@ class eq(tuple):
 
              x_2 + \\neg x_3 + \\neq x_4 + x_7 = 2
 
-        as 
+        is 
 
         ::
 
-             eq((2,-3,-4,7),2)
+             eq(2,-3,-4,7, value=2)
 
         If there are repeated or opposite literals, then the constraint
         could make no sense. In particular `n_clauses` and `clauses`
@@ -2057,7 +2146,7 @@ class eq(tuple):
 
         """
         if "value" not in kw:
-            raise TypeError("EQUAL TO constraints must have \'threshold\' keyword argument")
+            raise TypeError("EQUAL TO constraints must have \'value\' keyword argument")
         self = super(eq,cls).__new__(cls,args)
         self.value = kw['value']
         return self
@@ -2086,3 +2175,151 @@ class eq(tuple):
             yield c
         for c in geq(*self,threshold=self.value).clauses():
             yield c
+
+
+class weighted_eq(tuple):
+    def __new__(cls,*args,**kw):
+        """Linear equation constraint
+
+        Represent a general linear equation constraint. It is
+        different for :py:class:`eq` because the constraint can have
+        arbitrary integer weights on the variables but it is expressed
+        in term of positive literals only.
+
+        The object is a tuple of (weight,variable index) pairs, and
+        the field :py:attr:`value` is an integer.
+
+        The constraint claims that the boolean values, multiplied by
+        their respective weights, of the sequence of literals
+        (contained in the field `literals`) must sum to a number which
+        equal to the field :py:attr:`value`.
+
+        For example the encoding of 
+
+        .. math::
+
+             3 x_1 + 4 x_3 - 2 x_5 - x_7 = 0
+
+        is
+
+        ::
+
+             weighted_eq((3,1),(4,3),(-2,5),(-1,7),value=0)
+
+        Variable identifiers are expected to be positive.
+
+        Parameters
+        ----------
+        *args : zero or more (int,positive int) pairs
+            weighted sum of variables
+
+        value : integer
+           expected value of the sum
+
+        """
+        if "value" not in kw:
+            raise TypeError("WEIGHTED EQUALITY constraints must have \'value\' keyword argument")
+        self = super(weighted_eq,cls).__new__(cls,args)
+        self.value = kw['value']
+        return self
+
+    def __eq__(self,other):
+        return self.value == other.value and super(weighted_eq,self).__eq__(other)
+
+    def __repr__(self):
+        return "{}({}, value={})".format("weighted_eq",
+                                         ", ".join(str(i) for i in self),
+                                         self.value)
+
+    def __str__(self):
+        terms = [ "{}{}".format(w,v) for w,v in self ]
+        return "{} {} {}".format(" + ".join(literals),"==",self.value)
+    
+    def n_clauses(self):
+        """Number of clauses to represent the constraints"""
+        return len(list(self.clauses()))        
+
+        
+    def clauses(self):
+        """Clauses to represent the constraint"""
+
+        
+        domains = tuple([((w,v),(0,-v)) for w,v in self])
+
+        for summands in product(*domains):
+            if sum(w for w,_ in summands) != self.value:
+                yield disj(*(-v for _,v in summands))
+        
+class weighted_geq(tuple):
+    def __new__(cls,*args,**kw):
+        """Linear inequality constraint (greater than or equal to)
+
+        Represent a general linear inequality constraint. It is
+        different for :py:class:`geq` because the constraint can have
+        arbitrary integer weights on the variables but it is expressed
+        in term of positive literals only.
+
+        The object is a tuple of (weight,variable index) pairs, and
+        the field :py:attr:`threshold` is an integer.
+
+        The constraint claims that the boolean values, multiplied by
+        their respective weights, of the sequence of literals
+        (contained in the field `literals`) must sum to a number which
+        greater than or equal to the field :py:attr:`threshold`.
+
+        For example the encoding of 
+
+        .. math::
+
+             3 x_1 + 4 x_3 - 2 x_5 - x_7 \geq 0
+
+        is
+
+        ::
+
+             weighted_geq((3,1),(4,3),(-2,5),(-1,7),value=0)
+
+        Variable identifiers are expected to be positive.
+
+        Parameters
+        ----------
+        *args : zero or more (int,positive int) pairs
+            weighted sum of variables
+
+        threshold : integer
+           expected lower bound of the sum
+
+        """
+        if "threshold" not in kw:
+            raise TypeError("WEIGHTED GREATER OR EQUAL constraints must have \'threshold\' keyword argument")
+        self = super(weighted_geq,cls).__new__(cls,args)
+        self.threshold = kw['threshold']
+        return self
+
+    def __eq__(self,other):
+        return self.threshold == other.threshold and super(weighted_geq,self).__eq__(other)
+
+    def __repr__(self):
+        return "{}({}, value={})".format("weighted_geq",
+                                         ", ".join(str(i) for i in self),
+                                         self.threshold)
+
+    def __str__(self):
+        terms = [ "{}{}".format(w,v) for w,v in self ]
+        return "{} {} {}".format(" + ".join(literals),">=",self.threshold)
+    
+    def n_clauses(self):
+        """Number of clauses to represent the constraints"""
+        return len(list(self.clauses()))        
+
+        
+    def clauses(self):
+        """Clauses to represent the constraint"""
+
+        
+        domains = tuple([((w,v),(0,-v)) for w,v in self])
+
+        for summands in product(*domains):
+            if sum(w for w,_ in summands) < self.threshold:
+                yield disj(*(-v for _,v in summands))
+        
