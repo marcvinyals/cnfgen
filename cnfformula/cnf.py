@@ -856,7 +856,65 @@ class CNF(object):
                 raise RuntimeError("[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
         
         return output.getvalue()
-    
+
+    def sage(self, export_header=True, extra_text=None, rational=False):
+        from cStringIO import StringIO
+        output = StringIO()
+
+        # Change binary to real to allow rational solutions
+        output.write("p = MixedIntegerLinearProgram()\nx = p.new_variable({}=True)\n".format("real" if rational else "binary"))
+
+        def _print_lit_ineq(lits,sign, thr):
+            output.write("p.add_constraint(")
+            lhs = " + ".join( "{}*x[{}]".format(1 if l >= 0 else -1,abs(l)) for l in lits)
+            rhs = str(thr - len([i for i in lits if i<0]))
+            output.write(lhs + " " + sign + " " + rhs + ")\n")
+
+        def _print_lin_ineq(cnst):
+            output.write("p.add_constraint(")
+            lhs = " ".join( "{}*x[{}]".format(w,v) for w,v in cnst)
+            if type(cnst)==weighted_eq:
+                rhs = str(cnst.value)
+                op  = "="
+            elif type(cnst)==weighted_geq:
+                rhs = str(cnst.threshold)
+                op  = ">="
+            else:
+                raise RuntimeError("[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
+            output.write(lhs + " " + op + " " + rhs + ")\n")
+                    
+        # Normalize inequalities
+        for cnst in self._constraints:
+
+            # Representation clause by clause
+            if type(cnst) in [disj,xor]:
+                for cls in cnst.clauses():
+                    _print_lit_ineq(cls,">=",1)
+                
+            # Representation by equation
+            elif type(cnst)==eq:
+                _print_lit_ineq(cnst,"=",cnst.value)
+
+            # Representation by inequality
+            elif type(cnst)==geq:
+                _print_lit_ineq(cnst,">=",cnst.threshold)
+
+            elif type(cnst)==greater:
+                _print_lit_ineq(cnst,">=",cnst.threshold+1)
+
+            elif type(cnst)==leq:
+                _print_lit_ineq([-l for l in cnst],">=", len(cnst) - cnst.threshold)
+
+            elif type(cnst)==less:
+                _print_lit_ineq([-l for l in cnst],">=", len(cnst) - cnst.threshold + 1)
+
+            elif type(cnst) in [weighted_eq,weighted_geq]:
+                _print_lin_ineq(cnst)
+            else:
+                raise RuntimeError("[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
+
+        output.write("p.solve()")
+        return output.getvalue()
                 
     def latex(self, export_header=True, extra_text=None, full_document=False):
         """Output a LaTeX version of the CNF formula
