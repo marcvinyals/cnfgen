@@ -4,7 +4,7 @@
 """
 
 
-from cnfformula.cnf import CNF, weighted_geq
+from cnfformula.cnf import CNF
 from cnfformula.cmdline import SimpleGraphHelper
 
 from cnfformula.cmdline  import register_cnfgen_subcommand
@@ -12,7 +12,7 @@ from cnfformula.families import register_cnf_generator
 
 from cnfformula.graphs import enumerate_vertices,enumerate_edges,neighbors
 
-from itertools import combinations
+from itertools import combinations, chain
 import collections
 
 
@@ -170,8 +170,8 @@ def ExtendedEvenColoringFormula(G,T):
         F.add_clause([(True,var_name(u,v,'f')),
                       (True,var_name(u,v,'x'))])
 
-    F.add_weighted_geq([(-3,True,var) for var in true_vars] +
-                         [(-1,True,var) for var in false_vars], -T)
+    F.add_linear(*chain(*[(3,var) for var in true_vars] +
+                         [(1,var) for var in false_vars] + [("<=", T)]))
 
     return F
         
