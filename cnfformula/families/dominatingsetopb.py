@@ -56,7 +56,9 @@ class DominatingSetCmdHelper(object):
         Arguments:
         - `parser`: parser to load with options.
         """
-        parser.add_argument('d',metavar='<d>',type=int,action='store',help="size of the dominating set")
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('--d',metavar='<d>',type=int,action='store',help="size of the dominating set")
+        group.add_argument('--regular',action='store_true',help="Set size to V/(deg+1)")
         SimpleGraphHelper.setup_command_line(parser)
 
 
@@ -68,4 +70,6 @@ class DominatingSetCmdHelper(object):
         - `args`: command line options
         """
         G = SimpleGraphHelper.obtain_graph(args)
-        return DominatingSetOPB(G, args.d)
+        D = args.d
+        if args.regular : D = G.order()/(2*G.number_of_edges()/G.order()+1)
+        return DominatingSetOPB(G, D)
