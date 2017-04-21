@@ -881,7 +881,7 @@ class CNF(object):
             lhs = " ".join( "{}*x[{}]".format(w,v) for w,v in cnst)
             if type(cnst)==weighted_eq:
                 rhs = str(cnst.value)
-                op  = "="
+                op  = "=="
             elif type(cnst)==weighted_geq:
                 rhs = str(cnst.threshold)
                 op  = ">="
@@ -899,7 +899,7 @@ class CNF(object):
                 
             # Representation by equation
             elif type(cnst)==eq:
-                _print_lit_ineq(cnst,"=",cnst.value)
+                _print_lit_ineq(cnst,"==",cnst.value)
 
             # Representation by inequality
             elif type(cnst)==geq:
@@ -919,7 +919,8 @@ class CNF(object):
             else:
                 raise RuntimeError("[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
 
-        output.write("p.solve()")
+        output.write("p.solve()\n")
+#        output.write("p.get_values(x)\n")
         return output.getvalue()
                 
     def latex(self, export_header=True, extra_text=None, full_document=False):
