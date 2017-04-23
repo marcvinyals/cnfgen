@@ -52,7 +52,8 @@ class VertexCoverCmdHelper(object):
         """
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--d',metavar='<d>',type=int,action='store',help="size of the cover")
-        group.add_argument('--easy',action='store_true',help="Set size to V/2")
+        group.add_argument('--rational',action='store_true',help="Set size to V/2")
+        group.add_argument('--no-rational',action='store_true',help="Set size to V/2-1")
         SimpleGraphHelper.setup_command_line(parser)
 
 
@@ -65,5 +66,6 @@ class VertexCoverCmdHelper(object):
         """
         G = SimpleGraphHelper.obtain_graph(args)
         D = args.d
-        if args.easy : D = G.order()/2
+        if args.rational : D = G.order()/2
+        elif args.no_rational : D = G.order()/2-1
         return VertexCover(G, D)
