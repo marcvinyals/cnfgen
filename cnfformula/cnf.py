@@ -872,7 +872,7 @@ class CNF(object):
 
         def _print_lin_ineq(cnst):
             output.write("p.add_constraint(")
-            lhs = " ".join( "{}*x[{}]".format(w,v) for w,v in cnst)
+            lhs = " + ".join( "{}*x[{}]".format(w,v) for w,v in cnst)
             if type(cnst)==weighted_eq:
                 rhs = str(cnst.value)
                 op  = "=="
