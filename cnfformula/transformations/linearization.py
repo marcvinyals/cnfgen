@@ -51,7 +51,7 @@ class Linearization(CNF):
                 if (p==0):
                     if no_rat:
                         nweight = -1
-                        threshold = -(n*arity//2)
+                        threshold = (-n*arity//2)+1
                     else:
                         nweight = -2
                         threshold = -n*arity
@@ -77,7 +77,7 @@ class Linearization(CNF):
                     self._constraints.append(weighted_geq(*q,threshold=threshold))
                     
         self._length = None
-        assert self._check_coherence()
+#        assert self._check_coherence()
 
 @register_cnf_transformation_subcommand
 class LinearizationCmd:
