@@ -17,7 +17,7 @@ class Linearization(CNF):
     """Apply a substitution to a formula
     """
 
-    def __init__(self, cnf, arity, no_rat, equality):
+    def __init__(self, cnf, arity, num, den, no_rat, equality, divide):
         """Build a new CNF linearizing clauses
 
         Arguments:
@@ -49,19 +49,19 @@ class Linearization(CNF):
                 pweight=0
                 nweight=0
                 if (p==0):
-                    if no_rat:
-                        nweight = -1
-                        threshold = (-n*arity//2)+1
-                    else:
-                        nweight = -2
-                        threshold = -n*arity
+                    if (n>1) : raise NotImplemented()
+                    nweight = -den
+                    threshold = -num + (1 if no_rat else 0)
+                    if (divide):
+                        nweight /=den
+                        threshold =-(-threshold//den)
                 elif (n==0):
-                    if no_rat:
-                        pweight = 1
-                        threshold = -(-p*arity//2)
-                    else:
-                        pweight = 2
-                        threshold = p*arity
+                    if (p>1) : raise NotImplemented()
+                    pweight = den
+                    threshold = num
+                    if (divide):
+                        pweight /=den
+                        threshold =-(-threshold//den)
                 else:
                     pweight = n
                     nweight = -p
@@ -86,10 +86,15 @@ class LinearizationCmd:
 
     @staticmethod
     def setup_command_line(parser):
-        parser.add_argument('N',type=int,nargs='?',default=3,action='store',help="arity (default: 3)")
-        parser.add_argument('--no-rat',action='store_true')
-        parser.add_argument('--equality',action='store_true')
+        parser.add_argument('A',type=int,nargs='?',default=3,action='store',help="arity (default: 3)")
+        parser.add_argument('N',type=int,nargs='?',action='store',help="RHS coefficient (default: A)")
+        parser.add_argument('D',type=int,nargs='?',default=2,action='store',help="LHS coefficients (default:2)")
+        parser.add_argument('--no-rat',action='store_true',help="subtract 1 from the RHS on negative clauses")
+        parser.add_argument('--equality',action='store_true',help="replace inequalities by equalities")
+        parser.add_argument('--divide',action='store_true',help="divide by the RHS with rounding")
 
     @staticmethod
     def transform_cnf(F,args):
-        return Linearization(F,args.N,args.no_rat,args.equality)
+        if args.N is None:
+            args.N = args.A
+        return Linearization(F,args.A,args.N,args.D,args.no_rat,args.equality,args.divide)
