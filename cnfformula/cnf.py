@@ -751,7 +751,7 @@ class CNF(object):
         for cls in self._compressed_clauses():
             output.write("\n" + " ".join([str(l) for l in cls + (0,)]))
 
-    def opb(self, export_header=True, extra_text=None):
+    def opb(self, export_header=True, extra_text=None, opt=False):
         """Produce the OPB encoding of the formula
 
         The formula is rendered in the OPB format, which is
@@ -821,6 +821,9 @@ class CNF(object):
                 for line in extra_text.split("\n"):
                     output.write(("* "+line).rstrip()+"\n")
 
+        if opt:
+            output.write("min: " + " ".join(["-1 x{}".format(i+1) for i in range(nvariables)])+" ;\n")
+                
         def _print_lit_ineq(lits,sign, thr):
 
             lhs = " ".join( "{}1 x{}".format("+" if l >= 0 else "-",abs(l)) for l in lits)
@@ -872,12 +875,15 @@ class CNF(object):
         
         return output.getvalue()
 
-    def sage(self, export_header=True, extra_text=None, rational=False):
+    def sage(self, export_header=True, extra_text=None, rational=False, opt=False):
         from cStringIO import StringIO
         output = StringIO()
 
-        # Change binary to real to allow rational solutions
         output.write("p = MixedIntegerLinearProgram()\nx = p.new_variable({}=True)\n".format("real" if rational else "binary"))
+
+        if opt:
+            nvariables   = len(self._index2name)-1
+            output.write("p.set_objective(" + " + ".join(["x[{}]".format(i+1) for i in range(nvariables)])+")\n")
 
         def _print_lit_ineq(lits,sign, thr):
             output.write("p.add_constraint(")
