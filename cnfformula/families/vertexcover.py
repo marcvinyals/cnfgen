@@ -11,22 +11,28 @@ from cnfformula.families import register_cnf_generator
 from cnfformula.graphs import enumerate_vertices,neighbors
 
 @register_cnf_generator
-def Roth(n):
+def VertexCover(G,d):
     F=CNF()
 
-    def X(i):
-        return "x_{{{0}}}".format(i)
+    def D(v):
+        return "x_{{{0}}}".format(v)
+
+    def N(v):
+        return tuple(sorted([ e for e in G.edges(v) ]))
+
+    # Fix the vertex order
+    V=enumerate_vertices(G)
 
     # Create variables
-    for i in range(1,n+1):
-        F.add_variable(X(i))
+    for v in V:
+        F.add_variable(D(v))
 
-    # Conditions
-    for i in range(1,n+1):
-        for k in range(i+1,n+1):
-            for j in range(k+1,n+1):
-                if (i+j!=2*k): continue
-                F.add_clause([ (False,X(i)), (False,X(j)), (False,X(k)) ])
+    # Not too many true variables
+    F.add_less_or_equal([D(v) for v in V],d)
+
+    # Every edge must have a true D variable
+    for e in G.edges():
+        F.add_clause([ (True,D(v)) for v in e])
         
     return F
 
@@ -34,8 +40,8 @@ def Roth(n):
 class VertexCoverCmdHelper(object):
     """Command line helper for k-dominating set
     """
-    name='roth'
-    description='Roth Set'
+    name='vc'
+    description='Vertex Cover'
 
     @staticmethod
     def setup_command_line(parser):
@@ -44,7 +50,11 @@ class VertexCoverCmdHelper(object):
         Arguments:
         - `parser`: parser to load with options.
         """
-        parser.add_argument('n',type=int)
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('--d',metavar='<d>',type=int,action='store',help="size of the cover")
+        group.add_argument('--rational',action='store_true',help="Set size to V/2")
+        group.add_argument('--no-rational',action='store_true',help="Set size to V/2-1")
+        SimpleGraphHelper.setup_command_line(parser)
 
 
     @staticmethod
@@ -54,5 +64,8 @@ class VertexCoverCmdHelper(object):
         Arguments:
         - `args`: command line options
         """
-
-        return Roth(args.n)
+        G = SimpleGraphHelper.obtain_graph(args)
+        D = args.d
+        if args.rational : D = G.order()/2
+        elif args.no_rational : D = G.order()/2-1
+        return VertexCover(G, D)
