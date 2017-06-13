@@ -271,7 +271,7 @@ a sequence of transformations.
         output = cnf.sage(export_header=args.verbose,rational=True,
                          extra_text="COMMAND LINE: cnfgen " + " ".join(argv[1:]) + "\n")
 
-    elif args.output_format == 'opb-opb':
+    elif args.output_format == 'opb-opt':
         output = cnf.opb(export_header=args.verbose,opt=True,
                          extra_text="COMMAND LINE: cnfgen " + " ".join(argv[1:]) + "\n")
         
