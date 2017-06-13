@@ -11,7 +11,7 @@ from cnfformula.families import register_cnf_generator
 from cnfformula.graphs import enumerate_vertices,neighbors
 
 @register_cnf_generator
-def Roth(n):
+def Roth(n,bound):
     F=CNF()
 
     def X(i):
@@ -27,32 +27,23 @@ def Roth(n):
             for j in range(k+1,n+1):
                 if (i+j!=2*k): continue
                 F.add_clause([ (False,X(i)), (False,X(j)), (False,X(k)) ])
-        
+
+    if bound:
+        F.add_greater_or_equal([X(i) for i in range(1,n+1)],bound)
+
     return F
 
 @register_cnfgen_subcommand
-class VertexCoverCmdHelper(object):
-    """Command line helper for k-dominating set
-    """
+class RothCmdHelper(object):
     name='roth'
     description='Roth Set'
 
     @staticmethod
     def setup_command_line(parser):
-        """Setup the command line options for dominating set formula
-
-        Arguments:
-        - `parser`: parser to load with options.
-        """
         parser.add_argument('n',type=int)
+        parser.add_argument('--bound',type=int)
 
 
     @staticmethod
     def build_cnf(args):
-        """Build the k-dominating set formula
-
-        Arguments:
-        - `args`: command line options
-        """
-
-        return Roth(args.n)
+        return Roth(args.n, args.bound)
