@@ -70,7 +70,7 @@ def setup_command_line_args(parser):
                         formula to standard output. (default: -)
                         """)
     parser.add_argument('--output-format','-of',
-                        choices=['latex','dimacs','opb','sage-ip','sage-lp','opb-opt','sage-opt'],
+                        choices=['latex','dimacs','opb','sage-ip','sage-lp','opb-opt','sage-opt','wcnf'],
                         default='dimacs',
                         help="""
                         Output format of the formulas. 'latex' is
@@ -279,6 +279,10 @@ a sequence of transformations.
         output = cnf.sage(export_header=args.verbose,rational=False,opt=True,
                          extra_text="COMMAND LINE: cnfgen " + " ".join(argv[1:]) + "\n")
 
+    elif args.output_format == 'wcnf':
+        output = cnf.wcnf(export_header=args.verbose,
+                         extra_text="COMMAND LINE: cnfgen " + " ".join(argv[1:]) + "\n")
+        
     else:
         output = cnf.dimacs(export_header=args.verbose,
                             extra_text="COMMAND LINE: cnfgen " + " ".join(argv[1:]) + "\n")

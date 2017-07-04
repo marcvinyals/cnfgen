@@ -751,6 +751,38 @@ class CNF(object):
         for cls in self._compressed_clauses():
             output.write("\n" + " ".join([str(l) for l in cls + (0,)]))
 
+    def wcnf(self, export_header=True, extra_text=None):
+        from cStringIO import StringIO
+        output = StringIO()
+
+        # Count the number of variables and clauses
+        n = len(self._index2name)-1
+        m = len(self) + n
+        top = 2*m+1
+
+        # A nice header
+        if export_header:
+            for line in self.header.split("\n")[:-1]:
+                output.write(("c "+line).rstrip()+"\n")
+
+            if extra_text is not None:
+                for line in extra_text.split("\n"):
+                    output.write(("c "+line).rstrip()+"\n")
+
+
+        # Formula specification
+        output.write("p wcnf {0} {1} {2}\n".format(n, m, top))
+
+        # Opt
+        for var in range(1,n+1):
+            output.write("1 {} 0\n".format(var))
+            
+        # Clauses
+        for cls in self._compressed_clauses():
+            output.write(" ".join([str(l) for l in (top,) + cls + (0,)])+"\n")
+
+        return output.getvalue()
+            
     def opb(self, export_header=True, extra_text=None, opt=False):
         """Produce the OPB encoding of the formula
 
