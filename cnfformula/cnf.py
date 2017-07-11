@@ -911,7 +911,12 @@ class CNF(object):
         from cStringIO import StringIO
         output = StringIO()
 
-        output.write("p = MixedIntegerLinearProgram()\nx = p.new_variable({}=True)\n".format("real" if rational else "binary"))
+        output.write("p = MixedIntegerLinearProgram()\n") 
+        if rational:
+            output.write("x = p.new_variable(real=True, nonnegative=True)\n")
+            output.write("x.set_max(1)\n")
+        else:
+            output.write("x = p.new_variable(binary=True)\n")
 
         if opt:
             nvariables   = len(self._index2name)-1
@@ -966,6 +971,7 @@ class CNF(object):
             else:
                 raise RuntimeError("[Internal Error] Unknown type of constraints found: {}".format(type(cnst)))
 
+#        output.write("p.show()\n")
         output.write("p.solve()\n")
 #        output.write("p.get_values(x)\n")
         return output.getvalue()
