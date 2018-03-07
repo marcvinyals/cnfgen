@@ -33,7 +33,8 @@ def DominatingSetOPB(G,d,tiling,seed):
         F.add_variable(D(v))
 
     # Not too many true variables
-    F.add_less_or_equal([D(v) for v in V],d)
+    if not tiling:
+        F.add_less_or_equal([D(v) for v in V],d)
 
     # Every neighborhood must have a true D variable
     neighborhoods = sorted( set(N(v) for v in V) )
@@ -66,7 +67,7 @@ class DominatingSetCmdHelper(object):
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--d',metavar='<d>',type=int,action='store',help="size of the dominating set")
         group.add_argument('--regular',action='store_true',help="Set size to V/(deg+1)")
-        parser.add_argument('--tiling',action='store_true',help="Add tiling constraints")
+        group.add_argument('--tiling',action='store_true',help="Add tiling constraints")
         parser.add_argument('--seed',action='store_true',help="Set some vertex to true")
         SimpleGraphHelper.setup_command_line(parser)
 
