@@ -146,23 +146,23 @@ class TestSimple(TestArgparse) :
         G = self.parse(["--gnd", "10", "3"])
         self.assertEqual(G.order(),10)
         self.assertEqual(G.size(),15)
-        self.assertListEqual(G.degree().values(),[3]*10)
+        self.assertListEqual(dict(G.degree()).values(),[3]*10)
 
     def test_complete(self):
         G = self.parse(["--complete", "10"])
         self.assertEqual(G.order(),10)
         self.assertEqual(G.size(),45)
-        self.assertListEqual(G.degree().values(),[9]*10)
+        self.assertListEqual(dict(G.degree()).values(),[9]*10)
 
     def test_grid(self):
         G = self.parse(["--grid", "8", "5"])
         self.assertEqual(G.order(),40)
-        self.assertListEqual(sorted(G.degree().values()),[2]*4+[3]*18+[4]*(40-4-18))
+        self.assertListEqual(sorted(dict(G.degree()).values()),[2]*4+[3]*18+[4]*(40-4-18))
 
     def test_torus(self):
         G = self.parse(["--torus", "8", "5"])
         self.assertEqual(G.order(),40)
-        self.assertListEqual(G.degree().values(),[4]*40)
+        self.assertListEqual(dict(G.degree()).values(),[4]*40)
 
 class TestAddEdges(TestArgparse) :
     def setUp(self):
