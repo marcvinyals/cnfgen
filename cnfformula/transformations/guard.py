@@ -10,21 +10,24 @@ from ..cnf import CNF, disj, xor, less, greater, geq, leq
 
 
 @register_cnf_transformation
-def Spoiler(cnf):
-    """Add spoiler literals.
+def Guard(cnf):
+    """Guard clauses with spoiler literals.
 
-    Makes a xorified pebbling formula hard for regular resolution,
-    following [Urq11].
+    Makes a formula harder for regular resolution. Examples of inputs
+    for which this works:
+
+    * Ordering principle [AJPU07].
+    * Xorified pebbling [Urq11].
 
     """
 
     out=CNF()
-    out._header="Spoiler literals\n\n"+cnf._header
+    out._header="Guarded formula\n\n"+cnf._header
 
     for v in cnf.variables():
         out.add_variable(v)
 
-    variables = range(1,len(list(cnf.variables()))+1)
+    variables = range(1, len(list(cnf.variables())) + 1)
 
     # build and add new clauses
     for orig_cnst in cnf._constraints:
@@ -44,16 +47,16 @@ def Spoiler(cnf):
 
 
 @register_cnf_transformation_subcommand
-class SpoilerCmd:
-    """Spoiler literals
+class GuardCmd:
+    """Guard clauses
     """
-    name='spoiler'
-    description='Add spoiler literals'
+    name='guard'
+    description='Guard clauses with spoiler literals'
 
     @staticmethod
     def setup_command_line(parser):
         pass
 
     @staticmethod
-    def transform_cnf(F,args):
-        return Spoiler(F)
+    def transform_cnf(F, args):
+        return Guard(F)
