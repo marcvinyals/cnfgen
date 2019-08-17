@@ -109,7 +109,12 @@ from cnfformula.families.tseitin import TseitinFormula
 from itertools import combinations
 
 @cnfformula.families.register_cnf_generator
-def VsidsFormulaTs(n,d,m,l,k):
+def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
+    hardenedPsi=True
+    sequentialPsi=False
+    hardenedDelta=True
+    completeTautology=False
+
     vsids=CNF()
     graph=networkx.random_regular_graph(d,n)
     charge=[1]+[0]*(n-1)
@@ -127,6 +132,9 @@ def VsidsFormulaTs(n,d,m,l,k):
 
     def tname(y,z,i):
         return "t_{}_{}_{}".format(y,z,i)
+
+    def aname(i):
+        return "a_{}".format(i)
 
     Y = [0]*k
     Z = [0]*k
@@ -147,31 +155,30 @@ def VsidsFormulaTs(n,d,m,l,k):
             vsids.add_clause(C+[(False,s)])
             C.append((True,s))
 
-    for j in range(k):
-        for y in range(m):
-            #pitfall1(yname(j,y),X+Z[j])
-            pass
-
     def pitfall2(y1,y2,S):
         C = [(True,y1),(True,y2)]
         for s in S:
             vsids.add_clause(C+[(False,s)])
             C.append((True,s))
 
-    for j in range(k):
-        for (y1,y2) in combinations(range(m),2):
-            pitfall2(yname(j,y1),yname(j,y2),X+Z[j])
-            #pass
+    if hardenedPsi:
+        for j in range(k):
+            if sequentialPsi:
+                for y1 in range(0,m,2):
+                    y2 = y1+1
+                    pitfall2(yname(j,y1),yname(j,y2),X+Z[j])
+            else:
+                for (y1,y2) in combinations(range(m),2):
+                    pitfall2(yname(j,y1),yname(j,y2),X+Z[j])
+    else:
+        for j in range(k):
+            for y in range(m):
+                pitfall1(yname(j,y),X+Z[j])
 
     # Delta
     def tail1(z):
         vsids.add_clause([(True,tname('',z,1)),(False,z)])
         vsids.add_clause([(False,tname('',z,1)),(False,z)])
-
-    for j in range(k):
-        for z in Z[j]:
-            #tail1(z)
-            pass
 
     def tail2(y,z):
         vsids.add_clause([(True,tname(y,z,1)),(True,tname(y,z,3)),(False,y)])
@@ -179,21 +186,31 @@ def VsidsFormulaTs(n,d,m,l,k):
         vsids.add_clause([(False,tname(y,z,1)),(False,z),(False,y)])
         vsids.add_clause([(False,tname(y,z,2)),(False,z),(False,y)])
 
-    for j in range(k):
-        for (y,z) in product(Y[j],Z[j]):
-            tail2(y,z)
-            #pass
+    if hardenedDelta:
+        for j in range(k):
+            for (y,z) in product(Y[j],Z[j]):
+                tail2(y,z)
+    else:
+        for j in range(k):
+            for z in Z[j]:
+                tail1(z)
 
     # Gamma
-    vsids.add_clause([(False,yname(j,i)) for i in range(m) for j in range(k)])
+    if long_gamma:
+        vsids.add_clause([(False,yname(j,i)) for i in range(m) for j in range(k)])
 
-    for i in range(m):
-        vsids.add_clause([(False,yname(j,i)) for j in range(k)])
+    if split_gamma:
+        for i in range(0,m,split_gamma):
+            vsids.add_clause([(False,yname(j,i+ii)) for j in range(k) for ii in range(split_gamma)])
+            pass
 
-    for i in range(0,m,2):
-        #vsids.add_clause([(False,yname(j,i)) for j in range(k)] +
-        #                 [(False,yname(j,i+1)) for j in range(k)])
-        pass
+    if completeTautology:
+        kk=10
+        A = [aname(i) for i in range(kk)]
+        #kk=k
+        #A=[Y[i][0] for i in range(k)]
+        for polarity in product((True,False),repeat=kk):
+            vsids.add_clause(list(zip(polarity,A)))
 
     return vsids
 
@@ -204,12 +221,14 @@ class VsidsCmdHelper(object):
 
     @staticmethod
     def setup_command_line(parser):
-        parser.add_argument('n',metavar='<n>',type=int,help="n")
-        parser.add_argument('d',metavar='<d>',type=int,help="d")
-        parser.add_argument('m',metavar='<m>',type=int,help="m")
-        parser.add_argument('l',metavar='<l>',type=int,help="l")
-        parser.add_argument('k',metavar='<k>',type=int,help="k")
+        parser.add_argument('n',type=int)
+        parser.add_argument('d',type=int)
+        parser.add_argument('m',type=int)
+        parser.add_argument('l',type=int)
+        parser.add_argument('k',type=int)
+        parser.add_argument('--long-gamma',action="store_true")
+        parser.add_argument('--split-gamma',type=int)
 
     @staticmethod
     def build_cnf(args):
-        return VsidsFormulaTs(args.n, args.d, args.m, args.l, args.k)
+        return VsidsFormulaTs(args.n, args.d, args.m, args.l, args.k, args.long_gamma, args.split_gamma)
