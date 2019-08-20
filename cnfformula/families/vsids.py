@@ -168,18 +168,18 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
             C.append((True,s))
 
     if hardenedPsi:
-        for j in range(k):
+        for YY in Y:
             if sequentialPsi:
                 for y1 in range(0,m,2):
                     y2 = y1+1
-                    pitfall2(yname(j,y1),yname(j,y2),X+Z[j])
+                    pitfall2(YY[y1],YY[y2],X+Z[j])
             else:
                 for (y1,y2) in combinations(range(m),2):
-                    pitfall2(yname(j,y1),yname(j,y2),X+Z[j])
+                    pitfall2(YY[y1],YY[y2],X+Z[j])
     else:
-        for j in range(k):
-            for y in range(m):
-                pitfall1(yname(j,y),X+Z[j])
+        for YY in Y:
+            for y in YY:
+                pitfall1(y,X+Z[j])
 
     # Delta
     def tail1(z):
@@ -187,8 +187,8 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
         vsids.add_clause([(False,tname('',z,1)),(False,z)])
 
     def tail2(y,z):
-        vsids.add_clause([(True,tname(y,z,1)),(True,tname(y,z,3)),(False,y)])
-        vsids.add_clause([(True,tname(y,z,2)),(False,tname(y,z,3)),(False,y)])
+        vsids.add_clause([(True,tname(y,z,1)),(True,tname(y,z,3))])
+        vsids.add_clause([(True,tname(y,z,2)),(False,tname(y,z,3))])
         vsids.add_clause([(False,tname(y,z,1)),(False,z),(False,y)])
         vsids.add_clause([(False,tname(y,z,2)),(False,z),(False,y)])
 
