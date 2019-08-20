@@ -120,10 +120,6 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
     charge=[1]+[0]*(n-1)
     ts = TseitinFormula(graph,charge)
 
-    X = list(ts.variables())
-    for x in X:
-        vsids.add_variable(x)
-
     def yname(j,i):
         return "y_{}_{}".format(j,i)
 
@@ -136,11 +132,21 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
     def aname(i):
         return "a_{}".format(i)
 
+    X = list(ts.variables())
+
     Y = [0]*k
     Z = [0]*k
     for j in range(k):
         Y[j] = [yname(j,i) for i in range(m)]
         Z[j] = [zname(j,i) for i in range(l)]
+
+    for YY in Y:
+        for y in YY:
+            vsids.add_variable(y)
+
+    for x in X:
+        vsids.add_variable(x)
+
 
     # Ts_j
     for j in range(k):
