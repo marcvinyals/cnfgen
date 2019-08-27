@@ -114,11 +114,21 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
     sequentialPsi=False
     hardenedDelta=True
     completeTautology=False
+    prependZ=False
+    splitTseitin=True
+    pitfallFull=False
 
     vsids=CNF()
     graph=networkx.random_regular_graph(d,n)
     charge=[1]+[0]*(n-1)
     ts = TseitinFormula(graph,charge)
+
+    if splitTseitin:
+        def xname(j,x):
+            return "{}_{}".format(x,j)
+    else:
+        def xname(j,x):
+            return x
 
     def yname(j,i):
         return "y_{}_{}".format(j,i)
@@ -132,11 +142,13 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
     def aname(i):
         return "a_{}".format(i)
 
-    X = list(ts.variables())
+    X_ = list(ts.variables())
 
+    X = [0]*k
     Y = [0]*k
     Z = [0]*k
     for j in range(k):
+        X[j] = [xname(j,x) for x in X_]
         Y[j] = [yname(j,i) for i in range(m)]
         Z[j] = [zname(j,i) for i in range(l)]
 
@@ -144,15 +156,21 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
         for y in YY:
             vsids.add_variable(y)
 
-    for x in X:
-        vsids.add_variable(x)
-
+    for XX in X:
+        for x in XX:
+            vsids.add_variable(x)
 
     # Ts_j
     for j in range(k):
-        append = [(True,z) for z in Z[j]]
+        if prependZ:
+            prepend = [(True,z) for z in Z[j][::2]]
+            append = [(True,z) for z in Z[j][1::2]]
+        else:
+            prepend = []
+            append = [(True,z) for z in Z[j]]
         for C in ts:
-            vsids.add_clause(C + append)
+            CC=[(p,xname(j,x)) for (p,x) in C]
+            vsids.add_clause(prepend + CC + append)
 
     # Psi
     def pitfall1(y,S):
@@ -160,22 +178,26 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
         for s in S:
             vsids.add_clause(C+[(False,s)])
             C.append((True,s))
+        if pitfallFull:
+            vsids.add_clause(C)
 
     def pitfall2(y1,y2,S):
         C = [(True,y1),(True,y2)]
         for s in S:
             vsids.add_clause(C+[(False,s)])
             C.append((True,s))
+        if pitfallFull:
+            vsids.add_clause(C)
 
     if hardenedPsi:
         for YY in Y:
             if sequentialPsi:
                 for y1 in range(0,m,2):
                     y2 = y1+1
-                    pitfall2(YY[y1],YY[y2],X+Z[j])
+                    pitfall2(YY[y1],YY[y2],X[j]+Z[j])
             else:
                 for (y1,y2) in combinations(range(m),2):
-                    pitfall2(YY[y1],YY[y2],X+Z[j])
+                    pitfall2(YY[y1],YY[y2],X[j]+Z[j])
     else:
         for YY in Y:
             for y in YY:
@@ -208,7 +230,6 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
     if split_gamma:
         for i in range(0,m,split_gamma):
             vsids.add_clause([(False,yname(j,i+ii)) for j in range(k) for ii in range(split_gamma)])
-            pass
 
     if completeTautology:
         kk=10
@@ -221,7 +242,7 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
     return vsids
 
 @cnfformula.cmdline.register_cnfgen_subcommand
-class VsidsCmdHelper(object):
+class VsidsTsCmdHelper(object):
     name='vsidsts'
     description='hard VSIDS formula'
 
@@ -238,3 +259,30 @@ class VsidsCmdHelper(object):
     @staticmethod
     def build_cnf(args):
         return VsidsFormulaTs(args.n, args.d, args.m, args.l, args.k, args.long_gamma, args.split_gamma)
+
+@cnfformula.families.register_cnf_generator
+def ZzZ(m,k):
+    split_gamma=2
+    vsids = CNF()
+    def yname(j,i):
+        return "y_{}_{}".format(j,i)
+    for j in range(k):
+        for (y1,y2) in combinations(range(m),2):
+            vsids.add_clause([(True,yname(j,y1)),(True,yname(j,y2))])
+    for i in range(0,m,split_gamma):
+        vsids.add_clause([(False,yname(j,i+ii)) for j in range(k) for ii in range(split_gamma)])
+    return vsids
+
+@cnfformula.cmdline.register_cnfgen_subcommand
+class ZzZHelper(object):
+    name='zzz'
+    description='hard VSIDS formula'
+
+    @staticmethod
+    def setup_command_line(parser):
+        parser.add_argument('m',type=int)
+        parser.add_argument('k',type=int)
+
+    @staticmethod
+    def build_cnf(args):
+        return ZzZ(args.m,args.k)
