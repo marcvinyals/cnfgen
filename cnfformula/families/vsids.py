@@ -112,7 +112,8 @@ from itertools import combinations
 def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
     hardenedPsi=True
     sequentialPsi=False
-    hardenedDelta=True
+    yDelta=True
+    tDelta=False
     completeTautology=False
     prependZ=False
     splitTseitin=True
@@ -204,7 +205,7 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
                 pitfall1(y,X+Z[j])
 
     # Delta
-    def tail1(z):
+    def tail0(z):
         vsids.add_clause([(True,tname('',z,1)),(False,z)])
         vsids.add_clause([(False,tname('',z,1)),(False,z)])
 
@@ -214,14 +215,20 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
         vsids.add_clause([(False,tname(y,z,1)),(False,z),(False,y)])
         vsids.add_clause([(False,tname(y,z,2)),(False,z),(False,y)])
 
-    if hardenedDelta:
+    def tail1(y,z):
+        vsids.add_clause([(False,z),(False,y)])
+
+    if yDelta:
         for j in range(k):
             for (y,z) in product(Y[j],Z[j]):
-                tail2(y,z)
+                if tDelta:
+                    tail2(y,z)
+                else:
+                    tail1(y,z)
     else:
         for j in range(k):
             for z in Z[j]:
-                tail1(z)
+                tail0(z)
 
     # Gamma
     if long_gamma:
@@ -254,7 +261,7 @@ class VsidsTsCmdHelper(object):
         parser.add_argument('l',type=int)
         parser.add_argument('k',type=int)
         parser.add_argument('--long-gamma',action="store_true")
-        parser.add_argument('--split-gamma',type=int)
+        parser.add_argument('--split-gamma',type=int,default=2)
 
     @staticmethod
     def build_cnf(args):
