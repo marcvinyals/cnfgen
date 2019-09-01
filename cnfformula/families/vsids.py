@@ -113,7 +113,8 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
     hardenedPsi=True
     sequentialPsi=False
     yDelta=True
-    tDelta=False
+    tDelta=True
+    sharedT=True
     completeTautology=False
     prependZ=False
     splitTseitin=True
@@ -137,8 +138,12 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
     def zname(j,i):
         return "z_{}_{}".format(j,i)
 
-    def tname(y,z,i):
-        return "t_{}_{}_{}".format(y,z,i)
+    if sharedT:
+        def tname(j,i):
+            return "t_{}_{}".format(j,i)
+    else:
+        def tname(y,z,i):
+            return "t_{}_{}_{}".format(y,z,i)
 
     def aname(i):
         return "a_{}".format(i)
@@ -215,6 +220,12 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
         vsids.add_clause([(False,tname(y,z,1)),(False,z),(False,y)])
         vsids.add_clause([(False,tname(y,z,2)),(False,z),(False,y)])
 
+    def tail3(j,y,z):
+        vsids.add_clause([(True,tname(j,1)),(True,tname(j,3)),(False,z),(False,y)])
+        vsids.add_clause([(True,tname(j,2)),(False,tname(j,3)),(False,z),(False,y)])
+        vsids.add_clause([(False,tname(j,1)),(False,z),(False,y)])
+        vsids.add_clause([(False,tname(j,2)),(False,z),(False,y)])
+
     def tail1(y,z):
         vsids.add_clause([(False,z),(False,y)])
 
@@ -222,7 +233,10 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
         for j in range(k):
             for (y,z) in product(Y[j],Z[j]):
                 if tDelta:
-                    tail2(y,z)
+                    if sharedT:
+                        tail3(j,y,z)
+                    else:
+                        tail2(y,z)
                 else:
                     tail1(y,z)
     else:
