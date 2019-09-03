@@ -112,13 +112,14 @@ from itertools import combinations
 def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
     hardenedPsi=True
     sequentialPsi=False
+    fullPsi=False
+    splitPsi=True
     yDelta=True
     tDelta=True
     sharedT=True
     completeTautology=False
     prependZ=False
     splitTseitin=True
-    pitfallFull=False
 
     vsids=CNF()
     graph=networkx.random_regular_graph(d,n)
@@ -131,6 +132,9 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
     else:
         def xname(j,x):
             return x
+
+    def pname(j,i):
+        return "p_{}_{}".format(j,i)
 
     def yname(j,i):
         return "y_{}_{}".format(j,i)
@@ -151,10 +155,12 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
     X_ = list(ts.variables())
 
     X = [0]*k
+    P = [0]*k
     Y = [0]*k
     Z = [0]*k
     for j in range(k):
         X[j] = [xname(j,x) for x in X_]
+        P[j] = [pname(j,i) for i in range(len(X_)+l)]
         Y[j] = [yname(j,i) for i in range(m)]
         Z[j] = [zname(j,i) for i in range(l)]
 
@@ -184,7 +190,7 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
         for s in S:
             vsids.add_clause(C+[(False,s)])
             C.append((True,s))
-        if pitfallFull:
+        if fullPsi:
             vsids.add_clause(C)
 
     def pitfall2(y1,y2,S):
@@ -192,22 +198,48 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
         for s in S:
             vsids.add_clause(C+[(False,s)])
             C.append((True,s))
-        if pitfallFull:
+        if fullPsi:
             vsids.add_clause(C)
 
-    if hardenedPsi:
-        for YY in Y:
+    def pitfall3(y1,y2,P):
+        CY = [(True,y1),(True,y2)]
+        for p in P:
+            vsids.add_clause(CY+[(False,p)])
+
+    def pitfall4(y,P,S):
+        CY = [(True,y)]
+        C = []
+        for (s,PP) in zip(S,combinations(P,len(P)-1)):
+            CP = [(True,p) for p in PP]
+            CS = C
+            if len(CS)+1==len(S):
+                CS = C[:len(X_)]+C[len(X_)+1:]
+
+            vsids.add_clause(CY+CP+CS+[(False,s)])
+            C.append((True,s))
+
+    for j in range(k):
+        XX = X[j]
+        PP = P[j]
+        YY = Y[j]
+        ZZ = Z[j]
+        if splitPsi:
+            for (y1,y2) in combinations(YY,2):
+                pitfall3(y1,y2,PP)
+            for y in YY:
+                pitfall4(y,PP,XX+ZZ)
+
+        elif hardenedPsi:
             if sequentialPsi:
                 for y1 in range(0,m,2):
                     y2 = y1+1
-                    pitfall2(YY[y1],YY[y2],X[j]+Z[j])
+                    pitfall2(YY[y1],YY[y2],XX+ZZ)
             else:
-                for (y1,y2) in combinations(range(m),2):
-                    pitfall2(YY[y1],YY[y2],X[j]+Z[j])
-    else:
-        for YY in Y:
+                for (y1,y2) in combinations(YY,2):
+                    pitfall2(y1,y2,XX+ZZ)
+        else:
             for y in YY:
-                pitfall1(y,X+Z[j])
+                pitfall1(y,XX+ZZ)
 
     # Delta
     def tail0(z):
@@ -221,10 +253,10 @@ def VsidsFormulaTs(n,d,m,l,k,long_gamma,split_gamma):
         vsids.add_clause([(False,tname(y,z,2)),(False,z),(False,y)])
 
     def tail3(j,y,z):
-        vsids.add_clause([(True,tname(j,1)),(True,tname(j,3)),(False,z),(False,y)])
-        vsids.add_clause([(True,tname(j,2)),(False,tname(j,3)),(False,z),(False,y)])
-        vsids.add_clause([(False,tname(j,1)),(False,z),(False,y)])
-        vsids.add_clause([(False,tname(j,2)),(False,z),(False,y)])
+        vsids.add_clause([(False,tname(j,1)),(True,tname(j,3)),(False,z)])
+        vsids.add_clause([(False,tname(j,2)),(False,tname(j,3)),(False,z)])
+        vsids.add_clause([(True,tname(j,1)),(False,z),(False,y)])
+        vsids.add_clause([(True,tname(j,2)),(False,z),(False,y)])
 
     def tail1(y,z):
         vsids.add_clause([(False,z),(False,y)])
