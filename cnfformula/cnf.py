@@ -357,7 +357,7 @@ class CNF(object):
         # Add the compressed clause
         try:
             return tuple((1 if p else -1) * self._name2index[n] for p, n in literals)
-        except KeyError,error:
+        except KeyError as error:
             if not self.auto_add_variables:
                 raise ValueError("The clause contains unknown variable: {}".format(error))
             else:
@@ -714,7 +714,7 @@ class CNF(object):
         .. [1] http://www.satlib.org/Benchmarks/SAT/satformat.ps
 
         """
-        from cStringIO import StringIO
+        from io import StringIO
         output = StringIO()
         self._dimacs_dump_clauses(output, export_header, extra_text)
         return output.getvalue()
@@ -752,7 +752,7 @@ class CNF(object):
             output.write("\n" + " ".join([str(l) for l in cls + (0,)]))
 
     def wcnf(self, export_header=True, extra_text=None):
-        from cStringIO import StringIO
+        from io import StringIO
         output = StringIO()
 
         # Count the number of variables and clauses
@@ -829,7 +829,7 @@ class CNF(object):
         .. [1] http://www.cril.univ-artois.fr/PB12/format.pdf
 
         """
-        from cStringIO import StringIO
+        from io import StringIO
         output = StringIO()
 
         # count the constraints (can't encode xor in OPB directly)
@@ -908,7 +908,7 @@ class CNF(object):
         return output.getvalue()
 
     def sage(self, export_header=True, extra_text=None, rational=False, opt=False):
-        from cStringIO import StringIO
+        from io import StringIO
         output = StringIO()
 
         output.write("p = MixedIntegerLinearProgram()\n") 
@@ -1038,7 +1038,7 @@ class CNF(object):
 \usepackage{listings}
 """
         
-        from cStringIO import StringIO
+        from io import StringIO
         output = StringIO()
         
         # formula header as a LaTeX comment
@@ -1415,7 +1415,7 @@ class CNF(object):
         variables : list of variables
            variables in the constraint
         """
-        threshold = (len(variables)+1)/2
+        threshold = (len(variables)+1)//2
         return self.add_equal_to(variables,threshold)
      
     def add_exactly_half_floor(self, variables):
@@ -1426,7 +1426,7 @@ class CNF(object):
         variables : list of variables
            variables in the constraint
         """
-        threshold = len(variables)/2
+        threshold = len(variables)//2
         return self.add_equal_to(variables,threshold)
 
 

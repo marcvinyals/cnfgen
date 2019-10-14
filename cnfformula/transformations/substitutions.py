@@ -642,7 +642,7 @@ class XorCompressionCmd:
 
         try:
             return  VariableCompression(F,B,function='xor')
-        except ValueError,e:
+        except ValueError as e:
             print("ERROR: {}".format(e),file=sys.stderr)
             exit(-1)
 
@@ -662,7 +662,7 @@ class MajCompressionCmd:
 
         try:
             return  VariableCompression(F,B,function='maj')
-        except ValueError,e:
+        except ValueError as e:
             print("ERROR: {}".format(e),file=sys.stderr)
             exit(-1)
 

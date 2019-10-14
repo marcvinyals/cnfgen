@@ -143,8 +143,8 @@ def command_line_utility(argv=sys.argv):
 
 
     # Formula generators cmdline setup 
-    import families
-    import transformations
+    from . import families
+    from . import transformations
     from .cmdline import is_cnfgen_subcommand
     from .cmdline import is_cnf_transformation_subcommand
     from .cmdline import find_methods_in_package

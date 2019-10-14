@@ -37,7 +37,6 @@ def supported_formats():
 #################################################################
 
 import sys
-import StringIO
 import io
 import os
 
@@ -269,7 +268,7 @@ def readGraph(input_file,graph_type,file_format='autodetect',multi_edges=False):
 
         try:
             G=grtype(networkx.read_gml(input_file))
-        except networkx.NetworkXError,errmsg:
+        except networkx.NetworkXError as errmsg:
             raise ValueError("[Parse error in GML input] {} ".format(errmsg))
 
     elif file_format=='kthlist':
@@ -1040,7 +1039,7 @@ def bipartite_random_regular(l,r,d,seed=None):
         G.add_node(v,bipartite=1)
 
     A=L*d
-    B=R*(l*d / r)
+    B=R*(l*d // r)
     assert len(B)==l*d
 
     for i in range(l*d):

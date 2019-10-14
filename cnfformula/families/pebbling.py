@@ -364,7 +364,7 @@ class PebblingCmdHelper:
         D= DirectedAcyclicGraphHelper.obtain_graph(args)
         try:
             return PebblingFormula(D)
-        except ValueError,e:
+        except ValueError as e:
             print("\nError: {}".format(e),file=sys.stderr)
             sys.exit(-1)
 
@@ -396,7 +396,7 @@ class StoneCmdHelper:
         D= DirectedAcyclicGraphHelper.obtain_graph(args)
         try:
             return StoneFormula(D,args.s)
-        except ValueError,e :
+        except ValueError as e :
             print("\nError: {}".format(e),file=sys.stderr)
             sys.exit(-1)
 
@@ -429,7 +429,7 @@ class SparseStoneCmdHelper:
         B= BipartiteGraphHelper.obtain_graph(args,suffix="_mapping")
         try:
             return SparseStoneFormula(D,B)
-        except ValueError,e:
+        except ValueError as e:
             print("\nError: {}".format(e),file=sys.stderr)
             sys.exit(-1)
 
