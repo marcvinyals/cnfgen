@@ -250,7 +250,7 @@ def readGraph(input_file,graph_type,file_format='autodetect',multi_edges=False):
     """
 
     # file name instead of file object
-    if isinstance(input_file,(str,unicode)):
+    if isinstance(input_file,str):
         with open(input_file,'r') as file_handle:
             return readGraph(file_handle,graph_type,file_format,multi_edges)
 
@@ -266,10 +266,20 @@ def readGraph(input_file,graph_type,file_format='autodetect',multi_edges=False):
 
     elif file_format=='gml':
 
+        # Networkx's GML reader expects to read from ascii encoded
+        # binary file. We could have sent the data to a temporary
+        # binary buffer but for some reasons networkx's GML reader
+        # function is poorly written and does not like such buffers.
+        # It turns out we can pass the data as a list of
+        # encoded ascii lines.
+
         try:
-            G=grtype(networkx.read_gml(input_file))
+            G=grtype(networkx.read_gml(line.encode('ascii') for line in input_file))
         except networkx.NetworkXError as errmsg:
             raise ValueError("[Parse error in GML input] {} ".format(errmsg))
+        except UnicodeEncodeError as errmsg:
+            raise ValueError("[Non-ascii chars in GML file] {} ".format(errmsg))
+
 
     elif file_format=='kthlist':
 
@@ -337,7 +347,7 @@ def writeGraph(G,output_file,graph_type,file_format='autodetect'):
     """
 
     # file name instead of file object
-    if isinstance(output_file,(str,unicode)):
+    if isinstance(output_file,str):
         with open(output_file,'w') as file_handle:
             return writeGraph(G,file_handle,graph_type,file_format)
 
@@ -353,7 +363,14 @@ def writeGraph(G,output_file,graph_type,file_format='autodetect'):
 
     elif file_format=='gml':
 
-        networkx.write_gml(G,output_file)
+        # Networkx's GML writer expects to write to an ascii encoded
+        # binary file. Thus we need to let Networkx write to
+        # a temporary binary ascii encoded buffer and then convert the
+        # content before sending it to the output file.
+        tempbuffer=io.BytesIO()
+        networkx.write_gml(G,tempbuffer)
+        print(tempbuffer.getvalue().decode('ascii'),
+              file=output_file)
 
     elif file_format=='kthlist':
 
