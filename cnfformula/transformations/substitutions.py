@@ -5,9 +5,6 @@
 
 from ..cnf import CNF
 
-from ..cmdline  import register_cnf_transformation_subcommand,BipartiteGraphHelper
-from ..transformations import register_cnf_transformation
-
 from itertools import combinations,product,permutations
 from cnfformula.graphs import bipartite_sets,neighbors
 import sys
@@ -112,7 +109,7 @@ class BaseSubstitution(CNF):
         return [ [ (polarity,name) ] ]
 
 
-@register_cnf_transformation
+
 class IfThenElseSubstitution(BaseSubstitution):
     """Transformed formula: substitutes variable with a three variables
     if-then-else
@@ -144,7 +141,7 @@ class IfThenElseSubstitution(BaseSubstitution):
         return [ [ (False,X) , (polarity,Y) ] , [ (True, X) , (polarity,Z) ] ]
 
 
-@register_cnf_transformation
+
 class MajoritySubstitution(BaseSubstitution):
     """Transformed formula: substitutes variable with a Majority
     """
@@ -187,7 +184,7 @@ class MajoritySubstitution(BaseSubstitution):
         
         
 
-@register_cnf_transformation
+
 class OrSubstitution(BaseSubstitution):
     """Transformed formula: substitutes variable with a OR
     """
@@ -225,7 +222,7 @@ class OrSubstitution(BaseSubstitution):
             return [ [(False,name)] for name in names ]
 
 
-@register_cnf_transformation
+
 class AllEqualSubstitution(BaseSubstitution):
     """Transformed formula: substitutes variable with 'all equals'
     """
@@ -261,7 +258,7 @@ class AllEqualSubstitution(BaseSubstitution):
         else:
             return [[ (False,a) for a in names ] , [ (True,a) for a in names ] ] # at least a true and a false variable.
 
-@register_cnf_transformation
+
 class NotAllEqualSubstitution(AllEqualSubstitution):
     """Transformed formula: substitutes variable with 'not all equals'
     """
@@ -288,7 +285,7 @@ class NotAllEqualSubstitution(AllEqualSubstitution):
         """
         return AllEqualSubstitution.transform_a_literal(self,not polarity,varname)
 
-@register_cnf_transformation
+
 class XorSubstitution(BaseSubstitution):
     """Transformed formula: substitutes variable with a XOR
     """
@@ -319,7 +316,7 @@ class XorSubstitution(BaseSubstitution):
         names = [ "{{{}}}^{}".format(varname,i) for i in range(self._rank) ]
         return list(self.parity_constraint(names,polarity))
 
-@register_cnf_transformation
+
 class FormulaLifting(BaseSubstitution):
     """Formula lifting: Y variable select X values
     """
@@ -371,7 +368,7 @@ class FormulaLifting(BaseSubstitution):
         return clauses
 
 
-@register_cnf_transformation
+
 class ExactlyOneSubstitution(BaseSubstitution):
     """Transformed formula: exactly one variable is true
     """
@@ -418,7 +415,7 @@ class ExactlyOneSubstitution(BaseSubstitution):
 
 
 
-@register_cnf_transformation
+
 class FlipPolarity(BaseSubstitution):
     """Flip the polarity of variables
     """
@@ -447,7 +444,7 @@ class FlipPolarity(BaseSubstitution):
         """
         return [[(not polarity,varname)]]
 
-@register_cnf_transformation
+
 class VariableCompression(BaseSubstitution):
     """Vabiable compression transformation 
     
@@ -523,184 +520,3 @@ class VariableCompression(BaseSubstitution):
         else:
             raise RuntimeError("Error: variable compression with invalid function")
             
-#
-# Command line helpers for these substitutions
-#
-@register_cnf_transformation_subcommand
-class NoSubstitutionCmd:
-    name='none'
-    description='no transformation'
-
-    @staticmethod
-    def setup_command_line(parser):
-        pass
-
-    @staticmethod
-    def transform_cnf(F,args):
-        return F
-
-@register_cnf_transformation_subcommand
-class OrSubstitutionCmd:
-    name='or'
-    description='substitute variable x with OR(x1,x2,...,xN)'
-
-    @staticmethod
-    def setup_command_line(parser):
-        parser.add_argument('N',type=int,nargs='?',default=2,action='store',help="arity (default: 2)")
-
-    @staticmethod
-    def transform_cnf(F,args):
-        return  OrSubstitution(F,args.N)
-
-@register_cnf_transformation_subcommand
-class XorSubstitutionCmd:
-    name='xor'
-    description='substitute variable x with XOR(x1,x2,...,xN)'
-
-    @staticmethod
-    def setup_command_line(parser):
-        parser.add_argument('N',type=int,nargs='?',default=2,action='store',help="arity (default: 2)")
-
-    @staticmethod
-    def transform_cnf(F,args):
-        return  XorSubstitution(F,args.N)
-
-@register_cnf_transformation_subcommand
-class AllEqualsSubstitutionCmd:
-    name='eq'
-    description='substitute variable x with predicate x1==x2==...==xN (i.e. all equals)'
-
-    @staticmethod
-    def setup_command_line(parser):
-        parser.add_argument('N',type=int,nargs='?',default=3,action='store',help="arity (default: 3)")
-
-    @staticmethod
-    def transform_cnf(F,args):
-        return  AllEqualSubstitution(F,args.N)
-
-@register_cnf_transformation_subcommand
-class NeqSubstitutionCmd:
-    name='neq'
-    description='substitute variable x with predicate |{x1,x2,...,xN}|>1 (i.e. not all equals)'
-
-    @staticmethod
-    def setup_command_line(parser):
-        parser.add_argument('N',type=int,nargs='?',default=3,action='store',help="arity (default: 3)")
-
-    @staticmethod
-    def transform_cnf(F,args):
-        return  NotAllEqualSubstitution(F,args.N)
-
-@register_cnf_transformation_subcommand
-class MajSubstitution:
-    name='maj'
-    description='substitute variable x with predicate Majority(x1,x2,...,xN)'
-
-    @staticmethod
-    def setup_command_line(parser):
-        parser.add_argument('N',type=int,nargs='?',default=3,action='store',help="arity (default: 3)")
-
-    @staticmethod
-    def transform_cnf(F,args):
-        return  MajoritySubstitution(F,args.N)
-
-@register_cnf_transformation_subcommand
-class IfThenElseSubstitutionCmd:
-    name='ite'
-    description='substitute variable x with predicate "if X then Y else Z"'
-
-    @staticmethod
-    def setup_command_line(parser):
-        pass
-    
-    @staticmethod
-    def transform_cnf(F,args):
-        return  IfThenElseSubstitution(F)
-
-@register_cnf_transformation_subcommand
-class ExactlyOneSubstitutionCmd:
-    name='one'
-    description='substitute variable x with predicate x1+x2+...+xN = 1'
-
-    @staticmethod
-    def setup_command_line(parser):
-        parser.add_argument('N',type=int,nargs='?',default=3,action='store',help="arity (default: 3)")
-    
-    @staticmethod
-    def transform_cnf(F,args):
-        return  ExactlyOneSubstitution(F,args.N)
-
-
-
-# Technically lifting is not a substitution, therefore it should be in
-# another file. Unfortunately there is a lot of dependency from
-# this one.
-@register_cnf_transformation_subcommand
-class FormulaLiftingCmd:
-    """Lifting 
-    """
-    name='lift'
-    description='one dimensional lifting  x -->  x1 y1  OR ... OR xN yN, with y1+..+yN = 1'
-
-    @staticmethod
-    def setup_command_line(parser):
-        parser.add_argument('N',type=int,nargs='?',default=3,action='store',help="arity (default: 3)")
-    
-    @staticmethod
-    def transform_cnf(F,args):
-        return FormulaLifting(F,args.N)
-
-
-@register_cnf_transformation_subcommand
-class FlipCmd:
-    name='flip'
-    description='negate all variables in the formula'
-
-    @staticmethod
-    def setup_command_line(parser):
-        pass
-    
-    @staticmethod
-    def transform_cnf(F,args):
-       
-        return  FlipPolarity(F)
-
-@register_cnf_transformation_subcommand
-class XorCompressionCmd:
-    name='xorcomp'
-    description='variable compression using XOR'
-
-    @staticmethod
-    def setup_command_line(parser):
-        BipartiteGraphHelper.setup_command_line(parser)
-        
-    @staticmethod
-    def transform_cnf(F,args):
-        B = BipartiteGraphHelper.obtain_graph(args)
-
-        try:
-            return  VariableCompression(F,B,function='xor')
-        except ValueError as e:
-            print("ERROR: {}".format(e),file=sys.stderr)
-            exit(-1)
-
-        
-@register_cnf_transformation_subcommand
-class MajCompressionCmd:
-    name='majcomp'
-    description='variable compression using Majority'
-
-    @staticmethod
-    def setup_command_line(parser):
-        BipartiteGraphHelper.setup_command_line(parser)
-        
-    @staticmethod
-    def transform_cnf(F,args):
-        B = BipartiteGraphHelper.obtain_graph(args)
-
-        try:
-            return  VariableCompression(F,B,function='maj')
-        except ValueError as e:
-            print("ERROR: {}".format(e),file=sys.stderr)
-            exit(-1)
-

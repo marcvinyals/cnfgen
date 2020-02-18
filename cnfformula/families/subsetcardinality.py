@@ -5,14 +5,9 @@
 
 from cnfformula.cnf import CNF
 
-from cnfformula.cmdline import BipartiteGraphHelper
-
 from cnfformula.graphs import bipartite_sets,enumerate_edges,neighbors
 
-import cnfformula.families
-import cnfformula.cmdline
 
-@cnfformula.families.register_cnf_generator
 def SubsetCardinalityFormula(B, equalities = False):
     r"""SubsetCardinalityFormula
 
@@ -117,24 +112,3 @@ def SubsetCardinalityFormula(B, equalities = False):
                 ssc.add_clause(cls,strict=True)
     
     return ssc
-
-
-
-
-@cnfformula.cmdline.register_cnfgen_subcommand
-class SCCmdHelper(object):
-    name='subsetcard'
-    description='subset cardinality formulas'
-
-    @staticmethod
-    def setup_command_line(parser):
-
-        parser.add_argument('--equal','-e',default=False,action='store_true',
-                            help="encode cardinality constraints as equations")
-        BipartiteGraphHelper.setup_command_line(parser)
-
-    @staticmethod
-    def build_cnf(args):
-        B = BipartiteGraphHelper.obtain_graph(args)
-        return SubsetCardinalityFormula(B,args.equal)
-

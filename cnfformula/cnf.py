@@ -11,7 +11,7 @@ to the `cnfformula` library.
 
 
 
-Copyright (C) 2012, 2013, 2014, 2015, 2016, 2019  Massimo Lauria <lauria.massimo@gmail.com>
+Copyright (C) 2012, 2013, 2014, 2015, 2016, 2019, 2020  Massimo Lauria <lauria.massimo@gmail.com>
 https://github.com/MassimoLauria/cnfgen.git
 
 """
@@ -482,7 +482,8 @@ class CNF(object):
         return self.__iter__()
 
 
-    def dimacs(self, export_header=True, extra_text=None):
+    def dimacs(self, export_header=True, extra_text=None,
+               export_varnames=False):
         """Produce the dimacs encoding of the formula
 
         The formula is rendered in the DIMACS format for CNF formulas,
@@ -499,6 +500,10 @@ class CNF(object):
 
         extra_text : str, optional
             Additional text attached to the header
+
+        export_varnames : bool, optional
+            determines whether a map from variable indices to variable
+            names should be appended to the header.
 
         Returns
         -------
@@ -524,16 +529,18 @@ class CNF(object):
 
         References
         ----------
-        .. [1] http://www.satlib.org/Benchmarks/SAT/satformat.ps
+        .. [1] http://www.cs.ubc.ca/~hoos/SATLIB/Benchmarks/SAT/satformat.ps
 
         """
         from io import StringIO
         output = StringIO()
-        self._dimacs_dump_clauses(output, export_header, extra_text)
+        self._dimacs_dump_clauses(output, export_header, extra_text,
+                                  export_varnames)
         return output.getvalue()
 
     
-    def _dimacs_dump_clauses(self, output=None, export_header=True, extra_text=None):
+    def _dimacs_dump_clauses(self, output=None, export_header=True,
+                             extra_text=None, export_varnames=False):
         """Dump the dimacs encoding of the formula to the file-like output
 
         This is for internal use only. It produces the dimacs output
@@ -561,6 +568,9 @@ class CNF(object):
                 for line in ascii_extra.split("\n"):
                     output.write(("c "+line).rstrip()+"\n")
 
+        if export_varnames:
+            for index,name in enumerate(self._index2name[1:]):
+                output.write("c varname {} {}\n".format(index+1,name))
 
         # Formula specification
         output.write("p cnf {0} {1}".format(n, m))
@@ -651,7 +661,7 @@ class CNF(object):
             output.write(latex_preamble)
             output.write("\\begin{document}\n")
             title=self.header.split('\n')[0]
-            title=title.replace("_","\_")
+            title=title.replace("_", "\\_")
             output.write("\\title{{{}}}\n".format(title))
             output.write("\\author{CNFgen formula generator}\n")
             output.write("\\maketitle\n")

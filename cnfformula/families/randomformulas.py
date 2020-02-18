@@ -8,10 +8,6 @@ import random
 
 from cnfformula.cnf import CNF
 
-import cnfformula.cmdline
-import cnfformula.families
-
-
 
 def clause_satisfied(cls,assignments):
     """Test whether a clause is satisfied by all assignments
@@ -58,7 +54,6 @@ def all_clauses(k, indices, planted_assignments):
 def sample_clauses_dense(k, indices, m, planted_assignments):
     return random.sample(list(all_clauses(k, indices, planted_assignments)), m)
 
-@cnfformula.families.register_cnf_generator
 def RandomKCNF(k, n, m, seed=None, planted_assignments=[]):
     """Build a random k-CNF
 
@@ -119,31 +114,3 @@ def RandomKCNF(k, n, m, seed=None, planted_assignments=[]):
         raise ValueError("There are fewer clauses available than the number requested")
 
     return F
-
-
-@cnfformula.cmdline.register_cnfgen_subcommand
-class RandCmdHelper(object):
-    """Command line helper for random formulas
-    """
-    name='randkcnf'
-    description='random k-CNF'
-
-    @staticmethod
-    def setup_command_line(parser):
-        """Setup the command line options for an and of literals
-
-        Arguments:
-        - `parser`: parser to load with options.
-        """
-        parser.add_argument('k',metavar='<k>',type=int,help="clause width")
-        parser.add_argument('n',metavar='<n>',type=int,help="number of variables")
-        parser.add_argument('m',metavar='<m>',type=int,help="number of clauses")
-
-    @staticmethod
-    def build_cnf(args):
-        """Build a conjunction
-
-        Arguments:
-        - `args`: command line options
-        """
-        return RandomKCNF(args.k, args.n, args.m)

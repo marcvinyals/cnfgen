@@ -19,6 +19,7 @@ clean:
 	rm -fr *.egg-info
 	rm -fr docs/_build
 	find . -name '*.pyc' -delete
+	find . -name '*.pyo' -delete
 	find . -name 'flycheck*.py' -delete
 
 package: clean
@@ -32,7 +33,7 @@ upload: package
 #
 # Development is based on pyenv
 #
-# The environment is based on the latest 3.6 python with is neither
+# The environment is based on the latest 3.8 python with is neither
 # a '-dev' nor an 'rc*' version. At least according to the list produced by
 #
 # $ pyenv install -l
@@ -42,7 +43,7 @@ PKG_DEPENDENCES:=wheel twine keyring
 DOC_DEPENDENCES:=sphinx sphinx-autobuild numpydoc sphinx_rtd_theme
 
 PYENV:= $(shell command -v pyenv 2> /dev/null)
-PYENV_PYVERSION:=$(shell pyenv install -l | grep '[[:space:]]3.6.[[:digit:]]*' | grep -v 'rc\|dev' | tail -1)
+PYENV_PYVERSION:=$(shell pyenv install -l | grep '[[:space:]]3.8.[[:digit:]]*' | grep -v 'rc\|dev' | tail -1)
 
 docs-build: docs-install-tools
 	. $(VIRTUALENV)/bin/activate && \

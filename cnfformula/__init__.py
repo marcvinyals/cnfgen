@@ -1,62 +1,61 @@
 #!/usr/bin/env python
+# -*- coding:utf-8 -*-
+"""Init code of the cnfformula pacakge
 
+Essentially it makes visible the names of the formulas and
+transformations implemented, plus some IO functions.
+
+"""
+
+# Basic CNF object
 from .cnf import CNF
+
+# IO functions
+from .utils.parsedimacs import readCNF
 from .graphs import readGraph,writeGraph
-from .cnfgen import command_line_utility as cnfgen
+from .graphs import supported_formats as supported_graph_formats
+
+# SAT solvers
+from .utils.solver import supported_satsolvers
+from .utils.solver import some_solver_installed
+
+# Formula families implemented
+from .families.cliquecoloring       import CliqueColoring
+from .families.coloring             import GraphColoringFormula
+from .families.coloring             import EvenColoringFormula
+from .families.counting             import CountingPrinciple
+from .families.counting             import PerfectMatchingPrinciple
+from .families.dominatingset        import DominatingSet
+from .families.graphisomorphism     import GraphIsomorphism
+from .families.graphisomorphism     import GraphAutomorphism
+from .families.ordering             import OrderingPrinciple
+from .families.ordering             import GraphOrderingPrinciple
+from .families.pebbling             import PebblingFormula
+from .families.pebbling             import StoneFormula
+from .families.pebbling             import SparseStoneFormula
+from .families.pigeonhole           import PigeonholePrinciple
+from .families.pigeonhole           import GraphPigeonholePrinciple
+from .families.pigeonhole           import BinaryPigeonholePrinciple
+from .families.ramsey               import PythagoreanTriples
+from .families.ramsey               import RamseyLowerBoundFormula
+from .families.randomformulas       import RandomKCNF
+from .families.subgraph             import SubgraphFormula
+from .families.subgraph             import CliqueFormula
+from .families.subgraph             import BinaryCliqueFormula
+from .families.subgraph             import RamseyWitnessFormula
+from .families.subsetcardinality    import SubsetCardinalityFormula
+from .families.tseitin              import TseitinFormula
 
 
-__all__ = ["CNF","readGraph","writeGraph"]
-
-
-def _load_formula_generators():
-    """Load CNF generators from `cnfformula.families`.
-
-    This code explores the submodules of `cnfformula.families` and
-    load the formula generators, or at least the objects marked as
-    such with the `cnfformula.families.register_cnf_generator`
-    function decorator.
-    """
-    
-    import sys
-    from . import families
-    from .cmdline import find_methods_in_package
-    from .families import is_cnf_generator
-
-    loot = dict( (g.__name__, g)
-                 for g in find_methods_in_package(families,is_cnf_generator))
-    
-
-    # Load the formula generators in the `cnfformula` namespace
-    self_ref = sys.modules[__name__]
-    self_ref.__dict__.update(loot)
-    __all__.extend(name for name in loot.keys() if name not in __all__)
-
-
-
-
-def _load_formula_transformations():
-    """Load CNF transformations from `cnfformula.transformations`.
-
-    This code explores the submodules of `cnfformula.transformations` and
-    load the formula transformations, or at least the objects marked as
-    such with the `cnfformula.transformations.register_cnf_transformation`
-    function decorator.
-    """
-    
-    import sys
-    from . import transformations
-    from .cmdline import find_methods_in_package
-    from .transformations import is_cnf_transformation
-
-    loot = dict( (g.__name__, g)
-                 for g in find_methods_in_package(transformations,is_cnf_transformation))
-    
-
-    # Load the formula object into the namespace
-    self_ref = sys.modules[__name__]
-    self_ref.__dict__.update(loot)
-    __all__.extend(name for name in loot.keys() if name not in __all__)
-
-
-_load_formula_generators()
-_load_formula_transformations()
+# Formula transformation implemented
+from .transformations.substitutions import AllEqualSubstitution
+from .transformations.substitutions import ExactlyOneSubstitution
+from .transformations.substitutions import FlipPolarity
+from .transformations.substitutions import FormulaLifting
+from .transformations.substitutions import IfThenElseSubstitution
+from .transformations.substitutions import MajoritySubstitution
+from .transformations.substitutions import NotAllEqualSubstitution
+from .transformations.substitutions import OrSubstitution
+from .transformations.substitutions import VariableCompression
+from .transformations.substitutions import XorSubstitution
+from .transformations.shuffle import Shuffle

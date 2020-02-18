@@ -1,220 +1,102 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-"""Components for command line interface
+"""Components for command line interface for reading graphs
 
 CNFgen has many command line entry points to its functionality, and
 some of them expose the same functionality over and over. This module
 contains useful common components.
 
-Copyright (C) 2012, 2013, 2014, 2015, 2016  Massimo Lauria <lauria@kth.se>
+Copyright (C) 2012, 2013, 2014, 2015, 2016, 2019  Massimo Lauria <lauria@kth.se>
 https://github.com/MassimoLauria/cnfgen.git
 
 """
 
-
-
-    
 import sys
+import os
 import argparse
-
-import networkx
-import random
 
 from itertools import combinations, product
 
-from .graphs import supported_formats as graph_formats
-from .graphs import readGraph,writeGraph
-from .graphs import bipartite_random_left_regular,bipartite_random_regular,bipartite_shift
-from .graphs import bipartite_sets
-from .graphs import dag_complete_binary_tree,dag_pyramid
-from .graphs import sample_missing_edges
+import random
+import networkx
 
+from networkx.algorithms.bipartite import complete_bipartite_graph
+from networkx.algorithms.bipartite import random_graph as bipartite_random_graph
+from networkx.algorithms.bipartite import gnmk_random_graph as bipartite_gnmk_random_graph
 
+from cnfformula import supported_graph_formats
+from cnfformula.graphs import readGraph,writeGraph
+from cnfformula.graphs import bipartite_random_left_regular,bipartite_random_regular,bipartite_shift
+from cnfformula.graphs import bipartite_sets
+from cnfformula.graphs import dag_complete_binary_tree,dag_pyramid
+from cnfformula.graphs import sample_missing_edges
 
-try: # NetworkX >= 1.10
+from .msg import interactive_msg, error_msg, msg_prefix
+from .cmdline import redirect_stdin
 
-    complete_bipartite_graph    = networkx.bipartite.complete_bipartite_graph
-    bipartite_random_graph      = networkx.bipartite.random_graph
-    bipartite_gnmk_random_graph = networkx.bipartite.gnmk_random_graph
+def read_graph_from_input(args,suffix,grtype):
+    """Read a graph from input according to command line arguments
 
-except AttributeError: # Networkx < 1.10
-    
-    from networkx import complete_bipartite_graph
-    from networkx import bipartite_random_graph
-    from networkx import bipartite_gnmk_random_graph
-
-
-
-__all__ = [ "register_cnfgen_subcommand","is_cnfgen_subcommand",
-            "DirectedAcyclicGraphHelper", "SimpleGraphHelper", "BipartiteGraphHelper"]
-
-
-__cnfgen_subcommand_mark = "_is_cnfgen_subcommand"
-
-def register_cnfgen_subcommand(cls):
-    """Register the class as a formula subcommand
-
-    CNFgen command line tool invokes subcommands to generate formula
-    families. This class decorator is used to declare that a class is
-    indeed the implementation of a formula generator subcommand.
-    In this way CNFgen setup code will automatically find it and
-    integrate it into the CNFgen command line interface.
-
-    The class argument is tested to check whether it is a suitable
-    implementation of a CNFgen subcommand.
-
-    In particular the class must have four attributes
-    
-    + ``name`` the name of the CNF formula 
-    + ``description`` a short description of the formulas
-    + ``setup_command_line`` a method that takes a command line parser 
-      object and populates it with appropriate options.
-    + ``build_cnf`` a method that takes the arguments and produce the CNF.
-
-    The parser expected by ``setup_command_line(parser)`` in such as the one produced by
-    ``argparse.ArgumentParser``.
-
-    The argument for ``build_cnf(args)`` is the dictionary of flags and
-    options parsed from the command line as produced by ``args=parser.parse_args``
-
-    Parameters
-    ----------
-    class : any
-        the class to test
-
-    
-    Returns
-    -------
-    None
-
-    Raises
-    ------
-    AssertionError 
-        when the class is not formula subcommand
+    Parameters:
+    -----------
+    args:
+         result of argparse
+    gytype:
+         one of {dag,bipartite, simple}
     """
-    assert \
-        hasattr(cls,'build_cnf') and \
-        hasattr(cls,'setup_command_line') and \
-        hasattr(cls,'name') and \
-        hasattr(cls,'description')
+    # read graphs from input
+    fsource = getattr(args,"input"+suffix)
+    fformat = getattr(args,'graphformat'+suffix)
+    fext    = os.path.splitext(fsource.name)[-1][1:]
+    allowed = supported_graph_formats()[grtype]
 
-    setattr(cls,__cnfgen_subcommand_mark,True)
-    return cls
+    no_ext="""The formula generation process you asked for needs a {} graph in
+    input. Graph format was not specified on the command line and there no
+    file name extension to guess that from, thus it is impossible
+    to proceed.""".format(grtype)
 
-def is_cnfgen_subcommand(cls):
-    """Test whether the object is a registered CNFgen subcommand
-
-    Parameters
-    ----------
-    class : any
-        the class to test
-
-    Returns
-    -------
-    bool
-    """
-    return hasattr(cls,__cnfgen_subcommand_mark)
-
-
-__cnf_transformation_subcommand_mark = "_is_cnf_transformation_subcommand"
-
-def register_cnf_transformation_subcommand(cls):
-    """Register the class as a transformation subcommand
-
-    CNFgen command line tool invokes subcommands to apply
-    transformations to formula families. This class decorator is used
-    to declare that a class is indeed the implementation of a formula
-    transformation subcommand. In this way CNFgen setup code will
-    automatically find it and integrate it into the CNFgen command
-    line interface.
-
-    The class argument is tested to check whether it is a suitable
-    implementation of a CNFgen subcommand.
-
-    In particular the class must have four attributes
+    bad_ext="""The formula generation process you asked for needs a {} graph in
+    input. Graph format was not specified on the command line and the file
+    name extension do not corresponds to any of the allowed format, thus
+    it is impossible to proceed.""".format(grtype)
     
-    + ``name`` the name of the CNF transformation
-    + ``description`` a short description of the transformation
-    + ``setup_command_line`` a method that takes a command line parser object and populates it with appropriate options.
-    + ``transform_cnf`` a method that takes a CNF, the arguments and produce a new CNF.
+    ask_opt="""Please add the option '-gf <format>' to the graph specification,
+    where <format> in one of {}""".format(allowed)
 
-    The parser expected by ``setup_command_line(parser)`` in such as the one produced by
-    ``argparse.ArgumentParser``.
-
-    The arguments for ``transform_cnf(F,args)`` are a CNF, and the dictionary of flags and
-    options parsed from the command line as produced by ``args=parser.parse_args``
-
-    Parameters
-    ----------
-    class : any
-        the class to test
-
+    ask_gr="Please insert on <stdin> a simple undirected graph in {} format.".format(fformat)
     
-    Returns
-    -------
-    None
+    with redirect_stdin(fsource):
+        
+        with msg_prefix("ERROR: "):
 
-    Raises
-    ------
-    AssertionError 
-        when the class is not a transformation subcommand
+            # detect graph format
+            if fformat == 'autodetect':
+                if len(fext) == 0:
+                    error_msg(no_ext,filltext=70)
+                    error_msg(ask_opt,filltext=70)
+                    sys.exit(-1)
 
-    """
-    assert \
-        hasattr(cls,'transform_cnf') and \
-        hasattr(cls,'setup_command_line') and \
-        hasattr(cls,'name') and \
-        hasattr(cls,'description')
-
-    setattr(cls,__cnf_transformation_subcommand_mark,True)
-    return cls
-
-def is_cnf_transformation_subcommand(cls):
-    """Test whether the object is a registered CNFgen transformation
-
-    Parameters
-    ----------
-    class : any
-        the class to test
-
-    Returns
-    -------
-    bool
-    """
-    return hasattr(cls,__cnf_transformation_subcommand_mark)
-
-
-
-def find_methods_in_package(package,test, sortkey=None):
-    """Explore a package for functions and methods that implement a specific test"""
-
-    
-    import pkgutil
-
-    result = []
-
-    if sortkey == None :
-        sortkey = str
-    
-    for loader, module_name, _ in  pkgutil.walk_packages(package.__path__):
-        module_name = package.__name__+"."+module_name
-        if module_name in sys.modules:
-            module = sys.modules[module_name]
-        else:
-            module = loader.find_module(module_name).load_module(module_name)
-        for objname in dir(module):
-            obj = getattr(module, objname)
-            if test(obj):
-                result.append(obj)
-    result.sort(key=sortkey)
-    return result
-            
+                elif fext not in allowed:
+                    error_msg(bad_ext,filltext=70)
+                    error_msg(ask_opt,filltext=70)
+                    sys.exit(-1)
+                                                        
+        with msg_prefix("INPUT: "):
+            interactive_msg(ask_gr,filltext=70);
+                
+        try:
+            G=readGraph(sys.stdin,"simple",fformat)
+        except ValueError as e:
+            with msg_prefix('ERROR: '):
+                error_msg(str(e),filltext=70)
+                sys.exit(-1)
+                
+    return G
 
 
 
 
 ### Graph readers/generators
-
 def positive_int(string):
     """Type checker for positive integers
     """
@@ -228,12 +110,12 @@ class GraphHelper(object):
     """
 
     @staticmethod
-    def setup_command_line(parser):
+    def setup_command_line(parser, suffix="", required=False):
         """Setup command line options for getting graphs"""
         raise NotImplementedError("Graph Input helper must be subclassed")
 
     @staticmethod
-    def obtain_graph(args):
+    def obtain_graph(args,suffix=""):
         """Read/Generate the graph according to the command line options"""
         raise NotImplementedError("Graph Input helper must be subclassed")
 
@@ -291,7 +173,7 @@ class DirectedAcyclicGraphHelper(GraphHelper):
                             standard output.  (default:  -)
                             """)
         gr.add_argument('--graphformat'+suffix,'-gf'+suffix,
-                        choices=graph_formats()['dag'],
+                        choices=supported_graph_formats()['dag'],
                         default='autodetect',
                         help="Format of the DAG file. (default: autodetect)")
 
@@ -303,35 +185,25 @@ class DirectedAcyclicGraphHelper(GraphHelper):
         if getattr(args,'tree'+suffix) is not None:
             assert getattr(args,'tree'+suffix) > 0
 
-            D = dag_complete_binary_tree( getattr(args,'tree'+suffix) )
+            G = dag_complete_binary_tree( getattr(args,'tree'+suffix) )
 
         elif getattr(args,'pyramid'+suffix) is not None:
             assert getattr(args,'pyramid'+suffix) > 0
 
-            D = dag_pyramid( getattr(args,'pyramid'+suffix))
+            G = dag_pyramid( getattr(args,'pyramid'+suffix))
 
-        elif getattr(args,'graphformat'+suffix) is not None:
-
-            try:
-                print("INFO: reading directed acyclic graph {} from '{}'".format(suffix,getattr(args,"input"+suffix).name),
-                      file=sys.stderr)
-                D=readGraph(getattr(args,'input'+suffix),
-                            "dag",
-                            getattr(args,'graphformat'+suffix))
-            except ValueError as e:
-                print("ERROR ON '{}'. {}".format(getattr(args,'input'+suffix).name,e),file=sys.stderr)
-                exit(-1)
         else:
-            raise RuntimeError("Command line does not specify a directed acyclic graph")
+            G=read_graph_from_input(args,suffix,"dag")
+
 
         # Output the graph is requested
         if getattr(args,'savegraph'+suffix) is not None:
-            writeGraph(D,
+            writeGraph(G,
                        getattr(args,'savegraph'+suffix),
                        "dag",
                        getattr(args,'graphformat'+suffix))
 
-        return D
+        return G
 
 
 class SimpleGraphHelper(GraphHelper):
@@ -366,7 +238,7 @@ class SimpleGraphHelper(GraphHelper):
                     n, p = positive_int(values[0]),float(values[1])
                     if p>1.0 or p<0: raise ValueError('p must be a float between 0 and 1')
                 except ValueError as e:
-                    raise argparse.ArgumentError(self,e.message)
+                    raise argparse.ArgumentError(self,str(e))
                 setattr(args, self.dest, (n,p))
 
         gr=gr.add_mutually_exclusive_group(required=required)
@@ -422,7 +294,7 @@ class SimpleGraphHelper(GraphHelper):
                             standard output.  (default:  -)
                             """)
         gr.add_argument('--graphformat'+suffix,'-gf'+suffix,
-                        choices=graph_formats()['simple'],
+                        choices=supported_graph_formats()['simple'],
                         default='autodetect',
                         help="Format of the graph file. (default: autodetect)")
 
@@ -469,26 +341,14 @@ class SimpleGraphHelper(GraphHelper):
 
             G=networkx.empty_graph(getattr(args,'empty'+suffix))
 
-        elif getattr(args,'graphformat'+suffix) is not None:
-
-            try:
-                print("INFO: reading simple graph {} from '{}'".format(suffix,getattr(args,"input"+suffix).name),
-                      file=sys.stderr)
-                G=readGraph(getattr(args,'input'+suffix),
-                            "simple",
-                            getattr(args,'graphformat'+suffix))
-            except ValueError as e:
-                print("ERROR ON '{}'. {}".format(
-                    getattr(args,'input'+suffix).name,e),
-                      file=sys.stderr)
-                exit(-1)
         else:
-            raise RuntimeError("Command line does not specify a graph")
+
+            G=read_graph_from_input(args,suffix,"simple")
 
         # Graph modifications
         if getattr(args,'plantclique'+suffix) is not None and getattr(args,'plantclique'+suffix)>1:
             cliquesize = getattr(args,'plantclique'+suffix)
-            if cliquesize > G.order() :
+            if cliquesize > G.order():
                 raise ValueError("Clique cannot be larger than graph")
 
             clique=random.sample(G.nodes(),cliquesize)
@@ -540,7 +400,7 @@ class BipartiteGraphHelper(GraphHelper):
                     if not 0.0 <= p <= 1.0:
                         raise ValueError('p must be a float between 0 and 1')
                 except ValueError as e:
-                    raise argparse.ArgumentError(self,e.message)
+                    raise argparse.ArgumentError(self,str(e))
                 setattr(args, self.dest, (l,r,p))
 
         class BipartiteRegular(argparse.Action):
@@ -552,7 +412,7 @@ class BipartiteGraphHelper(GraphHelper):
                     if (d*l % r) != 0 :
                         raise ValueError('In a regular bipartite graph, r must divide d*l.')
                 except ValueError as e:
-                    raise argparse.ArgumentError(self,e.message)
+                    raise argparse.ArgumentError(self,str(e))
                 setattr(args, self.dest, (l,r,d))
 
         class BipartiteEdge(argparse.Action):
@@ -562,7 +422,7 @@ class BipartiteGraphHelper(GraphHelper):
                     if m > r*l :
                         raise ValueError('In a bipartite graph, #edges is at most l*r.')
                 except ValueError as e:
-                    raise argparse.ArgumentError(self,e.message)
+                    raise argparse.ArgumentError(self,str(e))
                 setattr(args, self.dest, (l,r,m))
 
         class BipartiteShift(argparse.Action):
@@ -586,7 +446,7 @@ class BipartiteGraphHelper(GraphHelper):
                         raise ValueError("in v(1),v(2)... we need 1 <= v(i) <= M.")
                     
                 except ValueError as e:
-                    raise argparse.ArgumentError(self,e.message)
+                    raise argparse.ArgumentError(self,str(e))
                 setattr(args, self.dest, (N,M,pattern))
 
         class BipartiteLeft(argparse.Action):
@@ -596,7 +456,7 @@ class BipartiteGraphHelper(GraphHelper):
                     if d > r :
                         raise ValueError('In a bipartite graph, left degree d is at most r.')
                 except ValueError as e:
-                    raise argparse.ArgumentError(self,e.message)
+                    raise argparse.ArgumentError(self,str(e))
                 setattr(args, self.dest, (l,r,d))
 
         gr=parser.add_argument_group("Bipartite graph structure "+suffix,
@@ -656,7 +516,7 @@ class BipartiteGraphHelper(GraphHelper):
                         help="""Save the graph to <graph_file>. Setting '<graph_file>' to '-'sends
                         the graph to standard output. (default: -) """)
         gr.add_argument('--graphformat'+suffix,'-gf'+suffix,
-                        choices=graph_formats()['bipartite'],
+                        choices=supported_graph_formats()['bipartite'],
                         default='autodetect',
                         help="Format of the graph file. (default: autodetect)")
 
@@ -698,27 +558,9 @@ class BipartiteGraphHelper(GraphHelper):
             
             l,r = getattr(args,"bcomplete"+suffix)
             G=complete_bipartite_graph(l,r)
-            # Workaround: the bipartite labels are missing in old version of networkx
-            for i in range(0,l):
-                G.add_node(i,bipartite=0)
-            for i in range(l,l+r):
-                G.add_node(i,bipartite=1)
-            
-        elif getattr(args,"graphformat"+suffix) is not None:
 
-            try:
-                print("INFO: reading bipartite graph {} from '{}'".format(suffix,getattr(args,"input"+suffix).name),
-                      file=sys.stderr)
-                G=readGraph(getattr(args,"input"+suffix),
-                            "bipartite",
-                            getattr(args,"graphformat"+suffix))
-            except ValueError as e:
-                print("ERROR ON '{}'. {}".format(getattr(args,"input"+suffix).name,e),file=sys.stderr)
-                exit(-1)
-                            
         else:
-            raise RuntimeError("Command line does not specify a bipartite graph")
-            
+            G=read_graph_from_input(args,suffix,"bipartite")
         
 
         # Graph modifications

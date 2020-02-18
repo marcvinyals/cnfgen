@@ -5,7 +5,7 @@ formulas that are graph based.
 """
 
 
-
+import copy
 
 __all__ = ["supported_formats",
            "readGraph","writeGraph",
@@ -28,7 +28,7 @@ _graphformats = {
 
 def supported_formats():
     """The graph file formats supported by the library."""
-    return _graphformats
+    return copy.deepcopy(_graphformats)
 
 
 
@@ -367,7 +367,7 @@ def has_bipartition(G):
     try:
         for n in G.nodes():
             # Accept both string and int representation
-            if not G.node[n]['bipartite'] in [0,1,'0','1']:
+            if not G.nodes[n]['bipartite'] in [0,1,'0','1']:
                 return False
     except KeyError:
         return False
@@ -456,12 +456,16 @@ def _read_graph_kthlist_format(inputfile,graph_class=networkx.DiGraph, bipartiti
     bipartition : boolean
         enforce that each edge (u,v) is such that u in in the left size
 
+    Raises
+    ------
+    ValueError
+        Error parsing the file
     """
-    if not graph_class in [networkx.DiGraph,
+    if graph_class not in [networkx.DiGraph,
                            networkx.MultiDiGraph,
                            networkx.Graph,
                            networkx.MultiGraph]:
-        raise ValueError("[Internal error] Attempt to use an unsupported class for graph representation.")
+        raise RuntimeError("[Internal error] Attempt to use an unsupported class for graph representation.")
 
 
     G=graph_class()
@@ -489,36 +493,33 @@ def _read_graph_kthlist_format(inputfile,graph_class=networkx.DiGraph, bipartiti
         if ':' not in l:
             # vertex number spec
             if nvertex>=0:
-                raise ValueError("[Syntax error] "+
-                                 "Line {} contains a second spec directive.".format(i))
-            nvertex = int(l.strip())
-            if nvertex<0:
-                raise ValueError("[Input error] "+
-                                 "Non negative number of vertices expected at line {}.".format(i))
+                raise ValueError("Line {} contains a second spec directive.".format(i))
+            try:
+                nvertex = int(l.strip())
+                if nvertex < 0:
+                    raise ValueError
+            except ValueError:
+                raise ValueError("Non negative number expected at line {}.".format(i))
             G.add_nodes_from(range(1,nvertex+1))
             G.ordered_vertices=range(1,nvertex+1)
             continue
 
         # Load edges from this line
         target,sources=l.split(':')
-        target=int(target.strip())
         try:
+            target=int(target.strip())
             sources=[int(s) for s in sources.split()]
         except ValueError:
-            raise ValueError("[Input error] "+
-                             "Non integer vertex ID at line {}.".format(i))
+            raise ValueError("Non integer vertex ID at line {}.".format(i))
         if len(sources)<1 or sources[-1]!=0:
-            raise ValueError("[Input error] "+
-                             "Line {} must end with 0.".format(i))
+            raise ValueError("Line {} must end with 0.".format(i))
 
         if target < 1 or target > nvertex:
-            raise ValueError("[Input error] "+
-                             "Vertex ID out of range [1,{}] at line {}.".format(nvertex,i))
+            raise ValueError("Vertex ID out of range [1,{}] at line {}.".format(nvertex,i))
 
         sources.pop()
-        if len([x for x in sources if x < 1 or x > nvertex]):
-            raise ValueError("[Input error] "+
-                             "Vertex ID out of range [1,{}] at line {}.".format(nvertex,i))
+        if len([x for x in sources if x < 1 or x > nvertex])>0:
+            raise ValueError("Vertex ID out of range [1,{}] at line {}.".format(nvertex,i))
 
         # Vertices should appear in increasing order if the graph is topologically sorted
         for s in sources:
@@ -527,19 +528,18 @@ def _read_graph_kthlist_format(inputfile,graph_class=networkx.DiGraph, bipartiti
 
         # Check the bi-coloring on both side
         if bipartition:
-            colors = [ G.node[s]['bipartite'] for s in sources if 'bipartite' in G.node[s] ]
+            colors = [ G.nodes[s]['bipartite'] for s in sources if 'bipartite' in G.nodes[s] ]
 
-            if 'bipartite' in G.node[target]:
-                colors += [ 1 - G.node[target]['bipartite'] ]
+            if 'bipartite' in G.nodes[target]:
+                colors += [ 1 - G.nodes[target]['bipartite'] ]
 
             if len(set(colors))>1:
-                raise ValueError("[Input error] "+
-                                 "Greedy bicoloring incompatible with edges in line {}.".format(i))
+                raise ValueError("Greedy bicoloring incompatible with edges in line {}.".format(i))
 
             default_color = 0 if len(colors)==0 else 1-colors[0]
-            G.node[target]['bipartite'] = default_color
+            G.nodes[target]['bipartite'] = default_color
             for s in sources:
-                G.node[s]['bipartite'] = 1-default_color
+                G.nodes[s]['bipartite'] = 1-default_color
 
 
         # after vertices, add the edges
@@ -549,8 +549,8 @@ def _read_graph_kthlist_format(inputfile,graph_class=networkx.DiGraph, bipartiti
     # label the bipartition on residual vertices
     if bipartition:
         for v in G.ordered_vertices:
-            if 'bipartite' not in G.node[v]:
-                G.node[v]['bipartite']=1
+            if 'bipartite' not in G.nodes[v]:
+                G.nodes[v]['bipartite']=1
 
 
     # cache the information that the graph is topologically sorted.
@@ -558,8 +558,7 @@ def _read_graph_kthlist_format(inputfile,graph_class=networkx.DiGraph, bipartiti
         G.topologically_sorted = True
 
     if nvertex!=G.order():
-        raise ValueError("[Input error] "+
-                         "{} vertices expected. Got {} instead.".format(nvertex,G.order()))
+        raise ValueError("{} vertices expected. Got {} instead.".format(nvertex,G.order()))
     return G
 
 def _read_graph_dimacs_format(inputfile,graph_class=networkx.Graph):
@@ -682,8 +681,8 @@ def _read_graph_matrix_format(inputfile):
     scanner = scan_integer(inputfile)
 
     try:
-        n = scanner.next()[0]
-        m = scanner.next()[0]
+        n = next(scanner)[0]
+        m = next(scanner)[0]
 
         # bipartition of vertices
         for i in range(1,n+1):

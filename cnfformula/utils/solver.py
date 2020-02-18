@@ -12,8 +12,6 @@ solvers, see
 
 import sys
 
-__all__ = ["supported_satsolvers", "is_satisfiable", "have_satsolver"]
-
 
 def _satsolve_filein_fileout(F, cmd='minisat',verbose=0):
     """Test CNF satisfiability using a minisat-style solver.
@@ -361,7 +359,7 @@ def supported_satsolvers():
     return list(_SATSOLVER_INTERFACE.keys())
 
 
-def have_satsolver(solvers=None):
+def some_solver_installed(solvers=None):
     """Test whether we can run SAT solvers.
 
     Parameters
@@ -498,7 +496,7 @@ def is_satisfiable(F, cmd=None, sameas=None, verbose=0):
         solver = solver_cmd.split()[0]
         s_func = _SATSOLVER_INTERFACE[sameas or solver]
 
-        if not have_satsolver(solvers=[solver]):
+        if not some_solver_installed(solvers=[solver]):
             continue
         else:
             return s_func(F, solver_cmd,verbose=verbose)

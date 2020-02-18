@@ -5,18 +5,14 @@
 
 
 from cnfformula.cnf import CNF
-from cnfformula.cmdline import SimpleGraphHelper
-
-from cnfformula.cmdline  import register_cnfgen_subcommand
-from cnfformula.families import register_cnf_generator
-
-from cnfformula.graphs import enumerate_vertices,enumerate_edges,neighbors
+from cnfformula.graphs import enumerate_vertices
+from cnfformula.graphs import enumerate_edges
+from cnfformula.graphs import neighbors
 
 from itertools import combinations
 import collections
 
 
-@register_cnf_generator
 def GraphColoringFormula(G,colors,functional=True):
     """Generates the clauses for colorability formula
 
@@ -82,7 +78,6 @@ def GraphColoringFormula(G,colors,functional=True):
 
 
 
-@register_cnf_generator
 def EvenColoringFormula(G):
     """Even coloring formula
 
@@ -140,48 +135,3 @@ def EvenColoringFormula(G):
 
     return F
 
-
-@register_cnfgen_subcommand
-class KColorCmdHelper(object):
-    """Command line helper for k-color formula
-    """
-    name='kcolor'
-    description='k-colorability formula'
-
-    @staticmethod
-    def setup_command_line(parser):
-        """Setup the command line options for k-color formula
-
-        Arguments:
-        - `parser`: parser to load with options.
-        """
-        parser.add_argument('k',metavar='<k>',type=int,action='store',help="number of available colors")
-        SimpleGraphHelper.setup_command_line(parser)
-
-
-    @staticmethod
-    def build_cnf(args):
-        """Build a k-colorability formula according to the arguments
-
-        Arguments:
-        - `args`: command line options
-        """
-        G = SimpleGraphHelper.obtain_graph(args)
-        return GraphColoringFormula(G,list(range(1,args.k+1)))
-
-
-
-@register_cnfgen_subcommand
-class ECCmdHelper(object):
-    name='ec'
-    description='even coloring formulas'
-    
-    @staticmethod
-    def setup_command_line(parser):
-        SimpleGraphHelper.setup_command_line(parser)
-
-
-    @staticmethod
-    def build_cnf(args):
-        G = SimpleGraphHelper.obtain_graph(args) 
-        return EvenColoringFormula(G)

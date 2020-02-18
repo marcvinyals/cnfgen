@@ -4,10 +4,6 @@
 """
 
 from cnfformula.cnf import CNF
-from cnfformula.cmdline import SimpleGraphHelper
-
-from cnfformula.cmdline  import register_cnfgen_subcommand
-from cnfformula.families import register_cnf_generator
 
 from cnfformula.graphs import enumerate_vertices
 from itertools import combinations,product
@@ -19,7 +15,6 @@ def _graph_isomorphism_var(u, v):
     """Standard variable name"""
     return "x_{{{0},{1}}}".format(u, v)
 
-@register_cnf_generator
 def GraphIsomorphism(G1, G2):
     """Graph Isomorphism formula
 
@@ -78,7 +73,6 @@ def GraphIsomorphism(G1, G2):
 
     return F
 
-@register_cnf_generator
 def GraphAutomorphism(G):
     """Graph Automorphism formula
 
@@ -105,65 +99,3 @@ def GraphAutomorphism(G):
     F.add_clause([(False, var(u, u)) for u in enumerate_vertices(G)], strict=True)
 
     return F
-
-
-
-@register_cnfgen_subcommand
-class GAutoCmdHelper(object):
-    """Command line helper for Graph Automorphism formula
-    """
-    name='gauto'
-    description='graph automorphism formula'
-
-    @staticmethod
-    def setup_command_line(parser):
-        """Setup the command line options for graph automorphism formula
-
-        Arguments:
-        - `parser`: parser to load with options.
-        """
-        SimpleGraphHelper.setup_command_line(parser)
-
-
-    @staticmethod
-    def build_cnf(args):
-        """Build a graph automorphism formula according to the arguments
-
-        Arguments:
-        - `args`: command line options
-        """
-        G = SimpleGraphHelper.obtain_graph(args)
-        return GraphAutomorphism(G)
-
-
-
-@register_cnfgen_subcommand
-class GIsoCmdHelper(object):
-    """Command line helper for Graph Isomorphism formula
-    """
-    name='giso'
-    description='graph isomorphism formula'
-
-    @staticmethod
-    def setup_command_line(parser):
-        """Setup the command line options for graph isomorphism formula
-
-        Arguments:
-        - `parser`: parser to load with options.
-        """
-        SimpleGraphHelper.setup_command_line(parser,suffix="1",required=True)
-        SimpleGraphHelper.setup_command_line(parser,suffix="2",required=True)
-
-
-    @staticmethod
-    def build_cnf(args):
-        """Build a graph automorphism formula according to the arguments
-
-        Arguments:
-        - `args`: command line options
-        """
-        G1 = SimpleGraphHelper.obtain_graph(args,suffix="1")
-        G2 = SimpleGraphHelper.obtain_graph(args,suffix="2")
-        return GraphIsomorphism(G1,G2)
-
-
