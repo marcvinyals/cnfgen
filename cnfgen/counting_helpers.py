@@ -8,6 +8,7 @@ https://massimolauria.net/cnfgen/
 
 from cnfformula import CountingPrinciple
 from cnfformula import PerfectMatchingPrinciple
+from cnfformula import PitfallFormula
 from cnfformula import TseitinFormula
 from cnfformula import SubsetCardinalityFormula
 
@@ -158,3 +159,18 @@ class SCCmdHelper(FormulaHelper):
         B = BipartiteGraphHelper.obtain_graph(args)
         return SubsetCardinalityFormula(B,args.equal)
 
+class PitfallCmdHelper(FormulaHelper):
+    name='pitfall'
+    description='Pitfall formula'
+
+    @staticmethod
+    def setup_command_line(parser):
+        parser.add_argument('v',type=int)
+        parser.add_argument('d',type=int)
+        parser.add_argument('ny',type=int)
+        parser.add_argument('nz',type=int)
+        parser.add_argument('k',type=int)
+
+    @staticmethod
+    def build_cnf(args):
+        return PitfallFormula(args.v, args.d, args.ny, args.nz, args.k)

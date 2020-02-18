@@ -3,7 +3,6 @@
 
 from cnfformula.cnf import CNF
 
-import cnfformula.cmdline
 import cnfformula.families
 
 from itertools import product
@@ -12,7 +11,6 @@ import networkx
 from cnfformula.families.tseitin import TseitinFormula
 from itertools import combinations
 
-@cnfformula.families.register_cnf_generator
 def PitfallFormula(v,d,ny,nz,k):
 
     def xname(j,x):
@@ -98,20 +96,3 @@ def PitfallFormula(v,d,ny,nz,k):
         phi.add_clause([(False,Y[j][i+ii]) for j in range(k) for ii in range(split_gamma)])
 
     return phi
-
-@cnfformula.cmdline.register_cnfgen_subcommand
-class PitfallCmdHelper(object):
-    name='pitfall'
-    description='Pitfall formula'
-
-    @staticmethod
-    def setup_command_line(parser):
-        parser.add_argument('v',type=int)
-        parser.add_argument('d',type=int)
-        parser.add_argument('ny',type=int)
-        parser.add_argument('nz',type=int)
-        parser.add_argument('k',type=int)
-
-    @staticmethod
-    def build_cnf(args):
-        return PitfallFormula(args.v, args.d, args.ny, args.nz, args.k)

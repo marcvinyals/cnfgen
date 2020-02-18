@@ -36,6 +36,7 @@ from .families.pebbling             import SparseStoneFormula
 from .families.pigeonhole           import PigeonholePrinciple
 from .families.pigeonhole           import GraphPigeonholePrinciple
 from .families.pigeonhole           import BinaryPigeonholePrinciple
+from .families.pitfall              import PitfallFormula
 from .families.ramsey               import PythagoreanTriples
 from .families.ramsey               import RamseyLowerBoundFormula
 from .families.randomformulas       import RandomKCNF
