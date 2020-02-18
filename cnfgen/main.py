@@ -204,6 +204,9 @@ def setup_command_line_parsers(progname, fhelpers, thelpers):
     g.add_argument('--quiet', '-q', action='store_false', dest='verbose',
                    help="""Output just the formula with no header.""")
 
+    parser.add_argument('--varnames', action='store_true', default=False,
+                        help="Output map from variable indices to names.")
+
     # setup each formula command parser
     subparsers = parser.add_subparsers(prog=progname,
                                        title="Available formula types",
@@ -412,7 +415,8 @@ def command_line_utility(argv=sys.argv):
 
             output = cnf.dimacs(
                 export_header=args.verbose,
-                extra_text="COMMAND LINE: cnfgen " + " ".join(argv[1:]) + "\n")
+                extra_text="COMMAND LINE: cnfgen " + " ".join(argv[1:]) + "\n",
+                export_varnames=args.varnames)
 
         else:
             error_msg("INTERNAL ERROR: unknown output format '{}'!".format(args.output_format))
