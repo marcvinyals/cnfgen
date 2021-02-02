@@ -20,6 +20,7 @@ from cnfgen.utils.solver import supported_satsolvers
 from cnfgen.utils.solver import some_solver_installed
 
 # Formula families implemented
+from cnfgen.families.bipartite import BipartiteOddCycle
 from cnfgen.families.cliquecoloring import CliqueColoring
 from cnfgen.families.coloring import GraphColoringFormula
 from cnfgen.families.coloring import EvenColoringFormula
