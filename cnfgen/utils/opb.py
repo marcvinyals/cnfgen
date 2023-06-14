@@ -15,6 +15,12 @@ import sys
 from cnfgen.formula.basecnf import BaseCNF
 from cnfgen.formula.baseopb import BaseOPB
 
+def sum_of_literals(output, lits):
+    for (c,l) in lits:
+        if l>=0:
+            output.write("{:+} x{} ".format(c,l) )
+        else:
+            output.write("{:+} ~x{} ".format(c,-l) )
 
 def to_opb_file(formula, fileorname=None,
                 export_header=True,
@@ -67,6 +73,12 @@ def to_opb_file(formula, fileorname=None,
             output.write("* varname x{0} {1}\n".format(varid, label))
         output.write("*\n")
 
+    # Optimization target
+    if formula.opt:
+        output.write("min: ")
+        sum_of_literals(output, formula.opt)
+        output.write(";\n")
+
     # Clauses
     if isinstance(formula,BaseCNF):
         for cls in formula:
@@ -80,9 +92,5 @@ def to_opb_file(formula, fileorname=None,
         for lin in formula:
             op = ">=" if lin[-2]==">=" else "="
             value = lin[-1]
-            for (c,l) in lin[:-2]:
-                if l>=0:
-                    output.write("{:+} x{} ".format(c,l) )
-                else:
-                    output.write("{:+} ~x{} ".format(c,-l) )
+            sum_of_literals(output, lin[:-2])
             output.write("{} {} ;\n".format(op,value))

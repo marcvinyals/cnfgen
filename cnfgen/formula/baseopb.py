@@ -176,6 +176,7 @@ class BaseOPB:
         self._constraints = []
         for c in constraints or []:
             self.add_constraint(c, check=True)
+        self.opt = None
 
     def __str__(self):
         """String representation of the formula
